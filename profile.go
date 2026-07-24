@@ -41,6 +41,18 @@ type Profile struct {
 	// TrackingID is a unique user ID for identifying the user with external
 	// services. Read-only.
 	TrackingID string `json:"tracking_id"`
+	// AnnounceKitUserToken is a token for the AnnounceKit widget. Observed
+	// on the live API; absent from the documented object.
+	AnnounceKitUserToken string `json:"announce_kit_user_token,omitempty"`
+	// HelpscoutBeaconSignature is a signature for the Help Scout beacon.
+	// Observed on the live API; absent from the documented object.
+	HelpscoutBeaconSignature string `json:"helpscout_beacon_signature,omitempty"`
+	// IntercomSignature is a signature for the Intercom widget. Observed on
+	// the live API; absent from the documented object.
+	IntercomSignature string `json:"intercom_signature,omitempty"`
+	// IsVIPCustomer reports whether the account is a VIP customer. Observed
+	// on the live API; absent from the documented object.
+	IsVIPCustomer bool `json:"is_vip_customer,omitempty"`
 	// CreatedAt is the registration date. Read-only.
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt is when this instance was last updated.
@@ -102,6 +114,12 @@ type ProfilePreferences struct {
 	// OnboardingActivityPageViewedAt is when the onboarding activity page
 	// was viewed. May be nil.
 	OnboardingActivityPageViewedAt *time.Time `json:"onboarding_activity_page_viewed_at"`
+	// CreatedAt is when the preferences instance was created. Observed on
+	// the live API; absent from the documented object.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt is when the preferences instance was last updated. Observed
+	// on the live API; absent from the documented object.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
 // GetPreferences retrieves the user preferences.

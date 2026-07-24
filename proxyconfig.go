@@ -75,6 +75,14 @@ type ProxyConfig struct {
 	// IPAuthorizationCity is the city for IP authorization geo targeting.
 	// Residential plans only. Nil when disabled.
 	IPAuthorizationCity *string `json:"ip_authorization_city"`
+	// IPAuthorizationState is the state for IP authorization geo targeting.
+	// Observed on the live API; only mentioned in passing in the docs. Nil
+	// when disabled.
+	IPAuthorizationState *string `json:"ip_authorization_state"`
+	// IPAuthorizationPostalCode is the postal code for IP authorization geo
+	// targeting. Observed on the live API; only mentioned in passing in the
+	// docs. Nil when disabled.
+	IPAuthorizationPostalCode *string `json:"ip_authorization_postalcode"`
 	// IPAuthorizationASN is the ASN targeted for IP authorization requests.
 	// Nil when disabled.
 	IPAuthorizationASN *string `json:"ip_authorization_asn"`
@@ -113,6 +121,13 @@ type ProxyConfigV3 struct {
 	IPAuthorizationCountryCodes []string `json:"ip_authorization_country_codes"`
 	// IPAuthorizationCity is the city for IP authorization geo targeting.
 	IPAuthorizationCity *string `json:"ip_authorization_city"`
+	// IPAuthorizationState is the state for IP authorization geo targeting.
+	// Observed on the live API; only mentioned in passing in the docs.
+	IPAuthorizationState *string `json:"ip_authorization_state"`
+	// IPAuthorizationPostalCode is the postal code for IP authorization geo
+	// targeting. Observed on the live API; only mentioned in passing in the
+	// docs.
+	IPAuthorizationPostalCode *string `json:"ip_authorization_postalcode"`
 	// IPAuthorizationASN is the ASN targeted for IP authorization requests.
 	IPAuthorizationASN *string `json:"ip_authorization_asn"`
 	// AutoReplaceInvalidProxies replaces proxies invalid for 15 minutes.
@@ -225,6 +240,14 @@ type ProxyConfigUpdateParams struct {
 	// IPAuthorizationCity sets the city for IP authorization geo targeting
 	// (residential plans only). Null disables.
 	IPAuthorizationCity Nullable[string]
+	// IPAuthorizationState sets the state for IP authorization geo
+	// targeting. Mutually exclusive with the other geo filters. Null
+	// disables.
+	IPAuthorizationState Nullable[string]
+	// IPAuthorizationPostalCode sets the postal code for IP authorization
+	// geo targeting. Mutually exclusive with the other geo filters. Null
+	// disables.
+	IPAuthorizationPostalCode Nullable[string]
 	// IPAuthorizationASN sets the ASN for IP authorization targeting.
 	// Mutually exclusive with the other geo filters. Null disables.
 	IPAuthorizationASN Nullable[string]
@@ -261,6 +284,12 @@ func (p ProxyConfigUpdateParams) MarshalJSON() ([]byte, error) {
 	}
 	if p.IPAuthorizationCity.isPresent() {
 		body["ip_authorization_city"] = p.IPAuthorizationCity
+	}
+	if p.IPAuthorizationState.isPresent() {
+		body["ip_authorization_state"] = p.IPAuthorizationState
+	}
+	if p.IPAuthorizationPostalCode.isPresent() {
+		body["ip_authorization_postalcode"] = p.IPAuthorizationPostalCode
 	}
 	if p.IPAuthorizationASN.isPresent() {
 		body["ip_authorization_asn"] = p.IPAuthorizationASN

@@ -172,8 +172,7 @@ func parseAPIError(statusCode int, requestID string, body []byte) *Error {
 					continue
 				}
 			}
-			var msgs []string
-			if json.Unmarshal(raw, &msgs) == nil {
+			if msgs := parseFieldErrorList(raw); msgs != nil {
 				if apiErr.FieldErrors == nil {
 					apiErr.FieldErrors = make(map[string][]string)
 				}
@@ -191,4 +190,39 @@ func parseAPIError(statusCode int, requestID string, body []byte) *Error {
 
 	apiErr.Detail = trimmed
 	return apiErr
+}
+
+// parseFieldErrorList extracts validation messages from a field-error value.
+// The docs show lists of strings (["This field is required."]) but the live
+// API returns lists of objects ([{"message": "This field is required.",
+// "code": "required"}]); bare strings are accepted too. Returns nil when the
+// value matches none of these shapes.
+func parseFieldErrorList(raw json.RawMessage) []string {
+	var items []json.RawMessage
+	if err := json.Unmarshal(raw, &items); err != nil {
+		// A bare string message.
+		var single string
+		if json.Unmarshal(raw, &single) == nil {
+			return []string{single}
+		}
+		return nil
+	}
+	msgs := make([]string, 0, len(items))
+	for _, item := range items {
+		var s string
+		if json.Unmarshal(item, &s) == nil {
+			msgs = append(msgs, s)
+			continue
+		}
+		var obj struct {
+			Message string `json:"message"`
+		}
+		if json.Unmarshal(item, &obj) == nil && obj.Message != "" {
+			msgs = append(msgs, obj.Message)
+		}
+	}
+	if len(msgs) == 0 {
+		return nil
+	}
+	return msgs
 }

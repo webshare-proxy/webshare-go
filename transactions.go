@@ -2,6 +2,7 @@ package webshare
 
 import (
 	"context"
+	"encoding/json"
 	"iter"
 	"net/http"
 	"net/url"
@@ -47,6 +48,10 @@ type Transaction struct {
 	RefundAmount float64 `json:"refund_amount"`
 	// RefundDate is when the last refund was issued. May be nil.
 	RefundDate *time.Time `json:"refund_date"`
+	// LineItems carries the transaction line items. Observed on the live
+	// API (as null) and absent from the documented object; its shape is
+	// undocumented, so the raw JSON is preserved.
+	LineItems json.RawMessage `json:"line_items,omitempty"`
 	// CreatedAt is when this instance was created.
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt is when this instance was last updated.

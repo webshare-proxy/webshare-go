@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-// APIKeysService exposes the API key operations.
+// APIKeysService exposes the API key operations. These endpoints are
+// session-token-only: calling them with an API key returns a 403 with code
+// "api_key_not_allowed" ("Cannot query this API endpoint with an API key.").
+// Authenticate with a login token (for example from AuthService.Login) to
+// manage API keys.
 type APIKeysService struct {
 	client *Client
 }

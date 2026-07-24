@@ -80,6 +80,21 @@ type ReferralConfig struct {
 	// PromoValue is the promotion value (10 or 20). Nil when PromoType is
 	// nil.
 	PromoValue *int `json:"promo_value"`
+	// InitialRate is the commission rate (0-1) applied to a referred
+	// user's transactions during the initial period. Observed on the live
+	// API; absent from the documented object.
+	InitialRate float64 `json:"initial_rate,omitempty"`
+	// OngoingRate is the commission rate (0-1) applied after the initial
+	// period. Observed on the live API; absent from the documented object.
+	OngoingRate float64 `json:"ongoing_rate,omitempty"`
+	// InitialRatePeriodDays is the length in days of the initial
+	// commission period. Observed on the live API; absent from the
+	// documented object.
+	InitialRatePeriodDays int `json:"initial_rate_period_days,omitempty"`
+	// MaxEarningsPerReferred is the maximum USD commission earnable from a
+	// single referred user. Observed on the live API; absent from the
+	// documented object.
+	MaxEarningsPerReferred float64 `json:"max_earnings_per_referred,omitempty"`
 	// CreatedAt is when this instance was created.
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt is when this instance was last updated.

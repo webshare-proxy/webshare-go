@@ -83,6 +83,10 @@ type Subscription struct {
 	// Throttled reports whether the subscription is throttled, usually due
 	// to high bandwidth usage with few proxies.
 	Throttled bool `json:"throttled"`
+	// WillRenew reports whether the subscription will renew at the end of
+	// the current term. Observed on the live API; absent from the
+	// documented object.
+	WillRenew bool `json:"will_renew,omitempty"`
 	// CreatedAt is when this instance was created.
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt is when this instance was last updated.

@@ -41,6 +41,16 @@ type Proxy struct {
 	CountryCode string `json:"country_code"`
 	// CityName is the city name of the proxy.
 	CityName string `json:"city_name"`
+	// ASNName is the ASN name of the proxy. Observed on the live API;
+	// absent from the documented object.
+	ASNName string `json:"asn_name,omitempty"`
+	// ASNNumber is the ASN number of the proxy. Observed on the live API;
+	// absent from the documented object.
+	ASNNumber int `json:"asn_number,omitempty"`
+	// HighCountryConfidence reports whether the proxy location has high
+	// country confidence. Observed on the live API; absent from the
+	// documented object.
+	HighCountryConfidence bool `json:"high_country_confidence,omitempty"`
 	// CreatedAt is when this instance was created.
 	CreatedAt time.Time `json:"created_at"`
 }

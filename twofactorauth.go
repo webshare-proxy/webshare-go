@@ -11,6 +11,10 @@ import (
 // Two-factor authentication only applies to login tokens; API keys are never
 // challenged. When 2FA is required, any API call returns 403 with code
 // "2fa_needed"; submit a code with SubmitCode and replay the request.
+//
+// The method management endpoints (at least GetMethod) are
+// session-token-only: calling them with an API key returns a 403 with code
+// "api_key_not_allowed" ("Cannot query this API endpoint with an API key.").
 type TwoFactorAuthService struct {
 	client *Client
 }

@@ -249,6 +249,30 @@ func TestErrorMapping(t *testing.T) {
 	}
 }
 
+func TestErrorMappingObjectFieldErrors(t *testing.T) {
+	// The live API returns field errors as lists of objects, not the
+	// documented lists of strings; both shapes must parse.
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		// Real dev-API response shape, verbatim.
+		if _, err := io.WriteString(w, `{"mode":[{"message":"This field is required.","code":"required"}]}`); err != nil {
+			t.Errorf("writing response: %v", err)
+		}
+	}))
+	_, err := client.Proxies.List(context.Background(), ProxyListParams{})
+	var apiErr *Error
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("err = %v, want *Error", err)
+	}
+	if apiErr.StatusCode != http.StatusBadRequest {
+		t.Errorf("StatusCode = %d, want 400", apiErr.StatusCode)
+	}
+	if got := apiErr.FieldErrors["mode"]; len(got) != 1 || got[0] != "This field is required." {
+		t.Errorf("FieldErrors[mode] = %v, want [This field is required.]", got)
+	}
+}
+
 func TestErrorCode2FANeeded(t *testing.T) {
 	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(t, w, http.StatusForbidden, map[string]any{

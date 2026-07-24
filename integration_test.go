@@ -8,12 +8,18 @@ import (
 )
 
 // TestIntegration exercises the real API. It is skipped unless the
-// WEBSHARE_API_KEY environment variable is set.
+// WEBSHARE_API_KEY environment variable is set. The optional
+// WEBSHARE_BASE_URL environment variable overrides the API base URL
+// (defaults to production).
 func TestIntegration(t *testing.T) {
 	if os.Getenv("WEBSHARE_API_KEY") == "" {
 		t.Skip("WEBSHARE_API_KEY is not set; skipping integration test")
 	}
-	client, err := NewClient()
+	var opts []RequestOption
+	if base := os.Getenv("WEBSHARE_BASE_URL"); base != "" {
+		opts = append(opts, WithBaseURL(base))
+	}
+	client, err := NewClient(opts...)
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}

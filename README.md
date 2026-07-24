@@ -120,6 +120,11 @@ if errors.As(err, &apiErr) {
 }
 ```
 
+Error codes worth switching on: `2fa_needed` (submit a 2FA code and retry),
+`account_suspended` and `account_deleted` (account state, returned by any
+call), and `api_key_not_allowed` (the endpoint is session-token-only — API
+key management and 2FA method endpoints cannot be called with an API key).
+
 ## Retries
 
 Failed requests are retried up to 2 times by default with exponential
