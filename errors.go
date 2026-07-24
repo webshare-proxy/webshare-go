@@ -98,25 +98,27 @@ func parseAPIError(statusCode int, requestID string, body []byte) *Error {
 	var obj map[string]json.RawMessage
 	if err := json.Unmarshal(body, &obj); err == nil {
 		for key, raw := range obj {
-			switch key {
-			case "detail":
-				var s string
-				if json.Unmarshal(raw, &s) == nil {
+			// "detail" and "code" are strings in API error envelopes, but
+			// DRF validation errors may reuse the same keys as field names
+			// with a list of messages (e.g. {"code": ["Invalid promo
+			// code."]}); handle both shapes.
+			var s string
+			if json.Unmarshal(raw, &s) == nil {
+				switch key {
+				case "detail":
 					apiErr.Detail = s
-				}
-			case "code":
-				var s string
-				if json.Unmarshal(raw, &s) == nil {
+					continue
+				case "code":
 					apiErr.Code = s
+					continue
 				}
-			default:
-				var msgs []string
-				if json.Unmarshal(raw, &msgs) == nil {
-					if apiErr.FieldErrors == nil {
-						apiErr.FieldErrors = make(map[string][]string)
-					}
-					apiErr.FieldErrors[key] = msgs
+			}
+			var msgs []string
+			if json.Unmarshal(raw, &msgs) == nil {
+				if apiErr.FieldErrors == nil {
+					apiErr.FieldErrors = make(map[string][]string)
 				}
+				apiErr.FieldErrors[key] = msgs
 			}
 		}
 		return apiErr
