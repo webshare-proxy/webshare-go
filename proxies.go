@@ -200,8 +200,8 @@ func (p ProxyDownloadParams) path() (string, error) {
 }
 
 // Download fetches the proxy list as plain text, one proxy per line in
-// address:port:username:password format. This endpoint is unauthenticated:
-// the URL embeds the download token.
+// address:port:username:password format. This endpoint is unauthenticated
+// (the URL embeds the download token); no Authorization header is sent.
 func (s *ProxiesService) Download(ctx context.Context, params ProxyDownloadParams, opts ...RequestOption) (string, error) {
 	path, err := params.path()
 	if err != nil {
@@ -209,7 +209,7 @@ func (s *ProxiesService) Download(ctx context.Context, params ProxyDownloadParam
 	}
 	q := url.Values{}
 	setInt(q, "plan_id", params.PlanID)
-	return s.client.doText(ctx, http.MethodGet, path, q, opts)
+	return s.client.doText(ctx, http.MethodGet, path, q, withOptions(opts, withAuthMode(authNone)))
 }
 
 // DownloadURL builds the shareable path-style proxy list download URL without

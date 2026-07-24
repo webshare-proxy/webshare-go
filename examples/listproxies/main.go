@@ -28,7 +28,13 @@ func main() {
 	}
 	fmt.Printf("account has %d proxies; first page:\n", page.Count)
 	for _, proxy := range page.Results {
-		fmt.Printf("  %s:%d (%s, valid=%t)\n", *proxy.ProxyAddress, proxy.Port, proxy.CountryCode, proxy.Valid)
+		// ProxyAddress is nil on residential plans, which connect through
+		// the p.webshare.io backbone instead of a direct address.
+		address := webshare.BackboneHost
+		if proxy.ProxyAddress != nil {
+			address = *proxy.ProxyAddress
+		}
+		fmt.Printf("  %s:%d (%s, valid=%t)\n", address, proxy.Port, proxy.CountryCode, proxy.Valid)
 	}
 
 	// Or iterate every proxy across all pages lazily.

@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -339,6 +341,128 @@ func TestConnectionErrorWrapped(t *testing.T) {
 	}
 	if reqErr.Unwrap() == nil {
 		t.Error("Unwrap() = nil, want underlying transport error")
+	}
+}
+
+func TestTokenSourceCalledPerAttempt(t *testing.T) {
+	var attempts atomic.Int32
+	source := &oauthSource{}
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if attempts.Add(1) < 3 {
+			writeJSON(t, w, http.StatusInternalServerError, map[string]any{"detail": "boom"})
+			return
+		}
+		writeJSON(t, w, http.StatusOK, map[string]any{"id": 1})
+	}), WithTokenSource(source))
+	if _, err := client.Profile.Get(context.Background()); err != nil {
+		t.Fatalf("Profile.Get: %v", err)
+	}
+	if got := source.calls.Load(); got != 3 {
+		t.Errorf("token source calls = %d, want 3 (one per attempt)", got)
+	}
+}
+
+func TestErrorBodyCappedAndDetailTruncated(t *testing.T) {
+	huge := strings.Repeat("x", maxErrorBody+4096)
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		if _, err := io.WriteString(w, huge); err != nil {
+			t.Errorf("writing response: %v", err)
+		}
+	}))
+	_, err := client.Profile.Get(context.Background())
+	var apiErr *Error
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("err = %v, want *Error", err)
+	}
+	if len(apiErr.Body) != maxErrorBody {
+		t.Errorf("len(Body) = %d, want %d (capped)", len(apiErr.Body), maxErrorBody)
+	}
+	if msg := apiErr.Error(); len(msg) > maxDetailLen+256 {
+		t.Errorf("len(Error()) = %d, want at most about %d (truncated detail)", len(msg), maxDetailLen)
+	}
+}
+
+func TestErrorRetryAfterExposed(t *testing.T) {
+	// A 429 on POST is not retried; RetryAfter lets callers self-throttle.
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Retry-After", "2")
+		writeJSON(t, w, http.StatusTooManyRequests, map[string]any{"detail": "throttled"})
+	}))
+	_, err := client.APIKeys.Create(context.Background(), APIKeyCreateParams{Label: "x"})
+	var apiErr *Error
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("err = %v, want *Error", err)
+	}
+	if apiErr.RetryAfter == nil || *apiErr.RetryAfter != 2*time.Second {
+		t.Errorf("RetryAfter = %v, want 2s", apiErr.RetryAfter)
+	}
+}
+
+func TestParseRetryAfterHardening(t *testing.T) {
+	tests := []struct {
+		value string
+		want  *time.Duration
+	}{
+		{"5", durationPtr(5 * time.Second)},
+		{"  5  ", durationPtr(5 * time.Second)},
+		{"1.5", durationPtr(1500 * time.Millisecond)},
+		{"-3", nil},
+		{"NaN", nil},
+		{"Inf", nil},
+		{"soon", nil},
+		{"", nil},
+	}
+	for _, tt := range tests {
+		got := parseRetryAfter(tt.value)
+		switch {
+		case tt.want == nil && got != nil:
+			t.Errorf("parseRetryAfter(%q) = %v, want nil", tt.value, *got)
+		case tt.want != nil && (got == nil || *got != *tt.want):
+			t.Errorf("parseRetryAfter(%q) = %v, want %v", tt.value, got, *tt.want)
+		}
+	}
+	// HTTP-date form yields a positive duration for a future date.
+	future := time.Now().UTC().Add(30 * time.Second).Format(http.TimeFormat)
+	if got := parseRetryAfter(future); got == nil || *got <= 0 || *got > 31*time.Second {
+		t.Errorf("parseRetryAfter(future date) = %v, want about 30s", got)
+	}
+	// Past dates are treated as absent.
+	past := time.Now().UTC().Add(-time.Hour).Format(http.TimeFormat)
+	if got := parseRetryAfter(past); got != nil {
+		t.Errorf("parseRetryAfter(past date) = %v, want nil", *got)
+	}
+}
+
+func durationPtr(d time.Duration) *time.Duration { return &d }
+
+func TestSuccessNonJSONBodyIsDecodeError(t *testing.T) {
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		if _, err := io.WriteString(w, "<html><body>maintenance page</body></html>"); err != nil {
+			t.Errorf("writing response: %v", err)
+		}
+	}))
+	_, err := client.Profile.Get(context.Background())
+	var decodeErr *ResponseDecodeError
+	if !errors.As(err, &decodeErr) {
+		t.Fatalf("err = %v, want *ResponseDecodeError", err)
+	}
+	if decodeErr.StatusCode != http.StatusOK {
+		t.Errorf("StatusCode = %d, want 200", decodeErr.StatusCode)
+	}
+	if !strings.Contains(string(decodeErr.Body), "maintenance") {
+		t.Errorf("Body = %q, want the raw body captured", decodeErr.Body)
+	}
+}
+
+func TestWithBaseURLValidation(t *testing.T) {
+	if _, err := NewClient(WithAPIKey("k"), WithBaseURL("proxy.webshare.io")); err == nil {
+		t.Error("expected an error for a base URL without a scheme")
+	}
+	if _, err := NewClient(WithAPIKey("k"), WithBaseURL("https://")); err == nil {
+		t.Error("expected an error for a base URL without a host")
 	}
 }
 

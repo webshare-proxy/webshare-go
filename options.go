@@ -19,6 +19,8 @@ type requestConfig struct {
 	baseURL            *url.URL
 	httpClient         *http.Client
 	tokenSource        TokenSource
+	unauthenticated    bool
+	authMode           authMode
 	maxRetries         int
 	retryNonIdempotent bool
 	timeout            time.Duration
@@ -37,8 +39,13 @@ func (c requestConfig) clone() requestConfig {
 }
 
 // WithAPIKey authenticates requests with the given Webshare API key. It is
-// shorthand for WithTokenSource(StaticTokenSource(Token{Value: key})).
+// shorthand for WithTokenSource(StaticTokenSource(Token{Value: key})). An
+// empty key is treated as absent: the client falls back to the
+// WEBSHARE_API_KEY environment variable and then errors.
 func WithAPIKey(key string) RequestOption {
+	if key == "" {
+		return func(*requestConfig) {}
+	}
 	return WithTokenSource(StaticTokenSource(Token{Value: key}))
 }
 
@@ -50,14 +57,29 @@ func WithTokenSource(ts TokenSource) RequestOption {
 	}
 }
 
+// WithUnauthenticated constructs a client without credentials: NewClient
+// neither requires a key nor reads WEBSHARE_API_KEY. Only unauthenticated
+// operations (login, registration, password reset, referral code info, the
+// download endpoints) can be called; authenticated operations fail with a
+// clear client-side error until credentials are provided.
+func WithUnauthenticated() RequestOption {
+	return func(cfg *requestConfig) {
+		cfg.unauthenticated = true
+	}
+}
+
 // WithBaseURL overrides the API base URL. The default is
 // "https://proxy.webshare.io" (the bare host: every operation path carries
-// its full /api/vN/... prefix).
+// its full /api/vN/... prefix). The URL must carry a scheme and a host.
 func WithBaseURL(rawURL string) RequestOption {
 	return func(cfg *requestConfig) {
 		u, err := url.Parse(rawURL)
 		if err != nil {
 			cfg.err = fmt.Errorf("webshare: invalid base URL %q: %w", rawURL, err)
+			return
+		}
+		if u.Scheme == "" || u.Host == "" {
+			cfg.err = fmt.Errorf("webshare: invalid base URL %q: scheme and host are required", rawURL)
 			return
 		}
 		cfg.baseURL = u

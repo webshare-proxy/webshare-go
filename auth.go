@@ -50,7 +50,7 @@ type RegisterParams struct {
 // only from the Webshare dashboard, not programmatically.
 func (s *AuthService) Register(ctx context.Context, params RegisterParams, opts ...RequestOption) (*AuthResult, error) {
 	out := &AuthResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/register/", nil, params, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/register/", nil, params, out, withOptions(opts, withAuthMode(authNone))); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -81,7 +81,7 @@ type RegisterSocialParams struct {
 // OAuth2). Unauthenticated.
 func (s *AuthService) RegisterSocial(ctx context.Context, params RegisterSocialParams, opts ...RequestOption) (*AuthResult, error) {
 	out := &AuthResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/register/social/", nil, params, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/register/social/", nil, params, out, withOptions(opts, withAuthMode(authNone))); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -102,7 +102,7 @@ type LoginParams struct {
 // mark it as usable only from the Webshare dashboard, not programmatically.
 func (s *AuthService) Login(ctx context.Context, params LoginParams, opts ...RequestOption) (*TokenResult, error) {
 	out := &TokenResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/login/", nil, params, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/login/", nil, params, out, withOptions(opts, withAuthMode(authNone))); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -123,7 +123,7 @@ type LoginSocialParams struct {
 // OAuth2). Unauthenticated.
 func (s *AuthService) LoginSocial(ctx context.Context, params LoginSocialParams, opts ...RequestOption) (*TokenResult, error) {
 	out := &TokenResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/login/social/", nil, params, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/login/social/", nil, params, out, withOptions(opts, withAuthMode(authNone))); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -163,7 +163,7 @@ type PasswordResetRequestParams struct {
 // Beyond basic validation this endpoint always succeeds, even for unknown
 // email addresses.
 func (s *AuthService) RequestPasswordReset(ctx context.Context, params PasswordResetRequestParams, opts ...RequestOption) error {
-	return s.client.doJSON(ctx, http.MethodPost, "/api/v2/resetpassword/", nil, params, nil, opts)
+	return s.client.doJSON(ctx, http.MethodPost, "/api/v2/resetpassword/", nil, params, nil, withOptions(opts, withAuthMode(authNone)))
 }
 
 // PasswordResetCompleteParams are the parameters for
@@ -182,7 +182,7 @@ type PasswordResetCompleteParams struct {
 // returned.
 func (s *AuthService) CompletePasswordReset(ctx context.Context, params PasswordResetCompleteParams, opts ...RequestOption) (*TokenResult, error) {
 	out := &TokenResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/resetpassword/complete/", nil, params, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/resetpassword/complete/", nil, params, out, withOptions(opts, withAuthMode(authNone))); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -261,7 +261,7 @@ type ActivationCompleteParams struct {
 // but encouraged for this endpoint.
 func (s *AuthService) CompleteActivation(ctx context.Context, params ActivationCompleteParams, opts ...RequestOption) (*TokenResult, error) {
 	out := &TokenResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/activation/complete/", nil, params, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/activation/complete/", nil, params, out, withOptions(opts, withAuthMode(authOptional))); err != nil {
 		return nil, err
 	}
 	return out, nil

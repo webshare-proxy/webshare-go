@@ -3,6 +3,7 @@ package webshare
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -40,7 +41,8 @@ type DownloadToken struct {
 // Get returns the download token for the given scope.
 func (s *DownloadTokensService) Get(ctx context.Context, scope DownloadTokenScope, opts ...RequestOption) (*DownloadToken, error) {
 	out := &DownloadToken{}
-	if err := s.client.doJSON(ctx, http.MethodGet, "/api/v2/download_token/"+string(scope)+"/", nil, nil, out, opts); err != nil {
+	path := "/api/v2/download_token/" + url.PathEscape(string(scope)) + "/"
+	if err := s.client.doJSON(ctx, http.MethodGet, path, nil, nil, out, opts); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -50,7 +52,8 @@ func (s *DownloadTokensService) Get(ctx context.Context, scope DownloadTokenScop
 // token.
 func (s *DownloadTokensService) Reset(ctx context.Context, scope DownloadTokenScope, opts ...RequestOption) (*DownloadToken, error) {
 	out := &DownloadToken{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/download_token/"+string(scope)+"/reset/", nil, nil, out, opts); err != nil {
+	path := "/api/v2/download_token/" + url.PathEscape(string(scope)) + "/reset/"
+	if err := s.client.doJSON(ctx, http.MethodPost, path, nil, nil, out, opts); err != nil {
 		return nil, err
 	}
 	return out, nil

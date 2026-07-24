@@ -2,6 +2,7 @@ package webshare
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -140,6 +141,35 @@ func TestListAllHonorsContextCancellation(t *testing.T) {
 	}
 	if count != 2 {
 		t.Errorf("items consumed = %d, want 2", count)
+	}
+}
+
+func TestNextPageRefusesCrossOrigin(t *testing.T) {
+	requests := 0
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		writeJSON(t, w, http.StatusOK, map[string]any{
+			"count":    2,
+			"next":     "https://attacker.example.com/api/v2/proxy/list/?page=2",
+			"previous": nil,
+			"results":  []map[string]any{{"id": "d-1", "port": 8000}},
+		})
+	}))
+	ctx := context.Background()
+	page, err := client.Proxies.List(ctx, ProxyListParams{Mode: ModeDirect})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	_, err = page.NextPage(ctx)
+	var crossErr *CrossOriginError
+	if !errors.As(err, &crossErr) {
+		t.Fatalf("err = %v, want *CrossOriginError", err)
+	}
+	if crossErr.TargetOrigin != "https://attacker.example.com" {
+		t.Errorf("TargetOrigin = %q, want https://attacker.example.com", crossErr.TargetOrigin)
+	}
+	if requests != 1 {
+		t.Errorf("requests = %d, want 1 (cross-origin URL must not be fetched)", requests)
 	}
 }
 

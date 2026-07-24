@@ -141,8 +141,8 @@ type ProxyActivityDownloadParams struct {
 
 // Download fetches the proxy activities as a CSV file (columns: Time,
 // Hostname, Destination Port, Bytes, Duration, Proxy, Your IP Address, Error
-// Reason, Protocol). This endpoint is unauthenticated: it uses the download
-// token from the activity scope.
+// Reason, Protocol). This endpoint is unauthenticated (it uses the download
+// token from the activity scope); no Authorization header is sent.
 func (s *ProxyActivityService) Download(ctx context.Context, params ProxyActivityDownloadParams, opts ...RequestOption) (string, error) {
 	if params.DownloadToken == "" {
 		return "", errors.New("webshare: proxy activity download: download token is required")
@@ -157,5 +157,5 @@ func (s *ProxyActivityService) Download(ctx context.Context, params ProxyActivit
 	setString(q, "bytes__gte", params.BytesGTE)
 	setString(q, "bytes__lte", params.BytesLTE)
 	setInt(q, "plan_id", params.PlanID)
-	return s.client.doText(ctx, http.MethodGet, "/api/v2/proxy/activity/download/", q, opts)
+	return s.client.doText(ctx, http.MethodGet, "/api/v2/proxy/activity/download/", q, withOptions(opts, withAuthMode(authNone)))
 }

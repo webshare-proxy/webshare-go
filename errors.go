@@ -31,11 +31,13 @@ type Error struct {
 	// FieldErrors maps field names to validation messages for request
 	// validation failures, e.g. {"mode": ["This field is required."]}.
 	FieldErrors map[string][]string
-	// Body is the raw response body.
+	// Body is the raw response body, capped at 1 MiB.
 	Body []byte
-
-	// retryAfter carries the parsed Retry-After header for the retry policy.
-	retryAfter time.Duration
+	// RetryAfter is the wait parsed from the Retry-After header (delta
+	// seconds or HTTP-date), when present and valid. Nil when the header was
+	// absent or unparsable. It is exposed so callers can self-throttle calls
+	// the SDK does not retry (for example a 429 on a POST).
+	RetryAfter *time.Duration
 }
 
 // Error implements the error interface.
@@ -51,7 +53,7 @@ func (e *Error) Error() string {
 	b.WriteString(")")
 	if e.Detail != "" {
 		b.WriteString(": ")
-		b.WriteString(e.Detail)
+		b.WriteString(truncate(e.Detail, maxDetailLen))
 	}
 	if len(e.FieldErrors) > 0 {
 		fields := make([]string, 0, len(e.FieldErrors))
@@ -79,6 +81,63 @@ func (e *RequestError) Error() string {
 // Unwrap returns the underlying transport error.
 func (e *RequestError) Unwrap() error {
 	return e.Err
+}
+
+// ResponseDecodeError is returned when a success (2xx) response body cannot
+// be decoded as the expected JSON shape, for example a non-JSON body or a
+// malformed pagination envelope. It carries the status and the raw body
+// (capped at 1 MiB) so callers never see a bare JSON error.
+type ResponseDecodeError struct {
+	// StatusCode is the HTTP status code of the response.
+	StatusCode int
+	// Body is the raw response body, capped at 1 MiB.
+	Body []byte
+	// Err is the underlying decode error.
+	Err error
+}
+
+// Error implements the error interface. The body is rendered as a short
+// snippet; the capped raw body remains available on Body.
+func (e *ResponseDecodeError) Error() string {
+	return fmt.Sprintf("webshare: decoding response body (status %d): %v: %s",
+		e.StatusCode, e.Err, truncate(strings.TrimSpace(string(e.Body)), maxDetailLen))
+}
+
+// Unwrap returns the underlying decode error.
+func (e *ResponseDecodeError) Unwrap() error {
+	return e.Err
+}
+
+// CrossOriginError is returned when a URL taken from a response envelope
+// (such as a pagination next link) points at a different origin than the
+// client base URL. The SDK refuses to follow such URLs so credentials are
+// never sent cross-origin.
+type CrossOriginError struct {
+	// BaseOrigin is the scheme://host origin of the client base URL.
+	BaseOrigin string
+	// TargetOrigin is the scheme://host origin of the refused URL.
+	TargetOrigin string
+}
+
+// Error implements the error interface.
+func (e *CrossOriginError) Error() string {
+	return fmt.Sprintf("webshare: refusing to follow cross-origin URL: response points at %s but the client base URL is %s", e.TargetOrigin, e.BaseOrigin)
+}
+
+const (
+	// maxErrorBody caps how much of an error (or undecodable) response body
+	// is captured on error values.
+	maxErrorBody = 1 << 20 // 1 MiB
+	// maxDetailLen caps the human-facing detail rendered by Error().
+	maxDetailLen = 2048
+)
+
+// truncate shortens s to at most n bytes, marking the cut.
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "... (truncated)"
 }
 
 // parseAPIError builds an *Error from a non-success response. Body parsing is

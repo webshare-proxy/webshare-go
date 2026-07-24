@@ -37,7 +37,13 @@ func main() {
 		log.Fatal(err)
 	}
 	for _, proxy := range page.Results {
-		fmt.Printf("%s:%d (%s)\n", *proxy.ProxyAddress, proxy.Port, proxy.CountryCode)
+		// ProxyAddress is nil on residential plans, which connect through
+		// the p.webshare.io backbone instead.
+		address := webshare.BackboneHost
+		if proxy.ProxyAddress != nil {
+			address = *proxy.ProxyAddress
+		}
+		fmt.Printf("%s:%d (%s)\n", address, proxy.Port, proxy.CountryCode)
 	}
 }
 ```
@@ -65,6 +71,18 @@ client, err := webshare.NewClient(webshare.WithTokenSource(myOAuthSource))
 The returned `Token` carries the value and the Authorization header scheme
 (`Token` by default), so alternative schemes such as `Bearer` plug in without
 changes elsewhere.
+
+Unauthenticated operations (login, registration, password reset, referral
+code info and the download endpoints) never send the Authorization header. To
+build a client without credentials at all, for example before a login flow,
+opt out explicitly:
+
+```go
+client, err := webshare.NewClient(webshare.WithUnauthenticated())
+```
+
+Calling an authenticated operation on such a client returns a clear error
+naming the fix.
 
 To act on behalf of a sub-user on proxy config, list, stats and activity
 calls, or to use admin federated access, pass `webshare.WithSubuser(id)` or
@@ -117,8 +135,10 @@ key, err := client.APIKeys.Create(ctx, params, webshare.WithRetryNonIdempotent()
 
 ## Timeouts
 
-The default per-attempt timeout is 60 seconds, configurable per client and
-per request:
+The timeout bounds a single HTTP attempt, including reading the response
+body; the default is 60 seconds, configurable per client and per request.
+With retries and Retry-After waits, the total call time can exceed it — use
+the context to bound the whole call:
 
 ```go
 client, err := webshare.NewClient(webshare.WithTimeout(10 * time.Second))

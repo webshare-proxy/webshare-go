@@ -92,7 +92,8 @@ type Client struct {
 // NewClient creates a Webshare API client. Credentials are taken from
 // WithAPIKey or WithTokenSource; when neither is given, the WEBSHARE_API_KEY
 // environment variable is used. NewClient returns an error when no credential
-// is available or an option is invalid.
+// is available (unless WithUnauthenticated is passed) or an option is
+// invalid.
 func NewClient(opts ...RequestOption) (*Client, error) {
 	base, _ := url.Parse(DefaultBaseURL)
 	cfg := requestConfig{
@@ -107,10 +108,10 @@ func NewClient(opts ...RequestOption) (*Client, error) {
 	if cfg.err != nil {
 		return nil, cfg.err
 	}
-	if cfg.tokenSource == nil {
+	if cfg.tokenSource == nil && !cfg.unauthenticated {
 		key := os.Getenv("WEBSHARE_API_KEY")
 		if key == "" {
-			return nil, errors.New("webshare: missing credentials: pass webshare.WithAPIKey or webshare.WithTokenSource, or set the WEBSHARE_API_KEY environment variable")
+			return nil, errors.New("webshare: missing credentials: pass webshare.WithAPIKey or webshare.WithTokenSource, set the WEBSHARE_API_KEY environment variable, or opt out with webshare.WithUnauthenticated")
 		}
 		cfg.tokenSource = StaticTokenSource(Token{Value: key})
 	}

@@ -419,12 +419,13 @@ type ReferralCodeInfo struct {
 }
 
 // GetCodeInfo retrieves the public information of a referral code. This is
-// the only unauthenticated endpoint in the referral group.
+// the only unauthenticated endpoint in the referral group; no Authorization
+// header is sent.
 func (s *ReferralService) GetCodeInfo(ctx context.Context, referralCode string, opts ...RequestOption) (*ReferralCodeInfo, error) {
 	q := url.Values{}
 	q.Set("referral_code", referralCode)
 	out := &ReferralCodeInfo{}
-	if err := s.client.doJSON(ctx, http.MethodGet, "/api/v2/referral/code/info/", q, nil, out, opts); err != nil {
+	if err := s.client.doJSON(ctx, http.MethodGet, "/api/v2/referral/code/info/", q, nil, out, withOptions(opts, withAuthMode(authNone))); err != nil {
 		return nil, err
 	}
 	return out, nil

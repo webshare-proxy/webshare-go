@@ -91,7 +91,8 @@ type ReplacedProxyDownloadParams struct {
 
 // Download fetches the replaced proxy list as plain text; each line is
 // new_address:new_port:username:password:replaced_address. This endpoint is
-// unauthenticated: it uses the download token from the replaced_proxy scope.
+// unauthenticated (it uses the download token from the replaced_proxy
+// scope); no Authorization header is sent.
 func (s *ReplacedProxiesService) Download(ctx context.Context, params ReplacedProxyDownloadParams, opts ...RequestOption) (string, error) {
 	if params.DownloadToken == "" {
 		return "", errors.New("webshare: replaced proxy download: download token is required")
@@ -106,5 +107,5 @@ func (s *ReplacedProxiesService) Download(ctx context.Context, params ReplacedPr
 	setString(q, "search", params.Search)
 	setInt(q, "proxy_list_replacement", params.ProxyListReplacement)
 	setString(q, "proxy_protocol", params.ProxyProtocol)
-	return s.client.doText(ctx, http.MethodGet, "/api/v2/proxy/list/replaced/download/", q, opts)
+	return s.client.doText(ctx, http.MethodGet, "/api/v2/proxy/list/replaced/download/", q, withOptions(opts, withAuthMode(authNone)))
 }
