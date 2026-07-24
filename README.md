@@ -48,6 +48,44 @@ func main() {
 }
 ```
 
+## Working with plans
+
+Accounts can hold multiple proxy plans, and most proxy operations are
+plan-scoped: list your plans first, pick the one to work with, and pass its
+ID to the calls that accept one (proxy list, proxy config, stats, status,
+download URLs, and more). The plan ID is also visible in the dashboard URL
+when viewing a plan.
+
+```go
+plans, err := client.Plans.List(ctx, webshare.PlanListParams{})
+if err != nil {
+	log.Fatal(err)
+}
+plan := plans.Results[0] // pick the plan to work with
+
+page, err := client.Proxies.List(ctx, webshare.ProxyListParams{
+	Mode:   webshare.ModeDirect,
+	PlanID: webshare.Int(plan.ID),
+})
+config, err := client.ProxyConfig.Get(ctx, plan.ID)
+```
+
+When `PlanID` is omitted on calls where it is optional, the API falls back
+to the account's default plan.
+
+## Key functions
+
+| Function | Purpose |
+|---|---|
+| `client.Plans.List` | List your proxy plans; the plan ID scopes most other calls |
+| `client.Proxies.List` | List the proxies of a plan (paginated; `ListAll` iterates every page) |
+| `client.Proxies.Download` | Download the proxy list as `address:port:username:password` text |
+| `client.ProxyConfig.Get` | Read a plan's proxy configuration, including the download token |
+| `client.Stats.Aggregate` | Aggregate proxy usage (bandwidth, requests, errors) for a period |
+| `webshare.ProxyURL` | Build direct or backbone proxy connection URLs (sessions, rotation, geo) |
+
+See [REFERENCE.md](REFERENCE.md) for every method.
+
 ## Authentication
 
 The client reads the `WEBSHARE_API_KEY` environment variable by default, or
@@ -151,6 +189,17 @@ profile, err := client.Profile.Get(ctx, webshare.WithTimeout(2*time.Second))
 ```
 
 Contexts are honored everywhere, including while waiting between retries.
+
+## Identification header
+
+Every request sends an `X-Webshare-Source` header identifying the caller for
+API-side tracking. The default is `WebshareSDK/<version> (Go; <runtime>)` —
+it names only the SDK and the Go runtime, no user data. Products built on
+the SDK can replace it:
+
+```go
+client, err := webshare.NewClient(webshare.WithSource("MyProduct/1.0.0"))
+```
 
 ## Proxy connection helper
 

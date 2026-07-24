@@ -18,13 +18,25 @@ func main() {
 	}
 	ctx := context.Background()
 
-	// The download token lives on the proxy config; the config endpoint
-	// needs the plan ID from the subscription.
-	subscription, err := client.Subscription.Get(ctx)
+	// Pick the plan to download the list for: proxy operations are
+	// plan-scoped, so list the plans and select one.
+	plans, err := client.Plans.List(ctx, webshare.PlanListParams{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	config, err := client.ProxyConfig.Get(ctx, subscription.Plan)
+	planID := 0
+	for _, plan := range plans.Results {
+		if plan.Status == webshare.PlanActive {
+			planID = plan.ID
+			break
+		}
+	}
+	if planID == 0 {
+		log.Fatal("no active plan found")
+	}
+
+	// The download token lives on that plan's proxy config.
+	config, err := client.ProxyConfig.Get(ctx, planID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,6 +45,7 @@ func main() {
 		Token:                config.ProxyListDownloadToken,
 		AuthenticationMethod: webshare.AuthMethodUsername,
 		EndpointMode:         webshare.ModeDirect,
+		PlanID:               webshare.Int(planID),
 	}
 
 	// The URL alone can be shared with tools that fetch the list directly.

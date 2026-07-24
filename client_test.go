@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -111,6 +113,47 @@ func TestTokenSourcePlugin(t *testing.T) {
 	}
 	if source.calls.Load() == 0 {
 		t.Error("token source was never called")
+	}
+}
+
+func TestSourceHeaderDefault(t *testing.T) {
+	var got string
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Get("X-Webshare-Source")
+		writeJSON(t, w, http.StatusOK, map[string]any{"id": 1})
+	}))
+	if _, err := client.Profile.Get(context.Background()); err != nil {
+		t.Fatalf("Profile.Get: %v", err)
+	}
+	// e.g. "WebshareSDK/0.1.0 (Go; go1.25.4)" — the runtime version varies.
+	pattern := regexp.MustCompile(`^WebshareSDK/` + regexp.QuoteMeta(Version) + ` \(Go; .+\)$`)
+	if !pattern.MatchString(got) {
+		t.Errorf("X-Webshare-Source = %q, want to match %q", got, pattern)
+	}
+	if !strings.Contains(got, runtime.Version()) {
+		t.Errorf("X-Webshare-Source = %q, want to contain runtime version %q", got, runtime.Version())
+	}
+}
+
+func TestSourceHeaderOverride(t *testing.T) {
+	var got string
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Get("X-Webshare-Source")
+		writeJSON(t, w, http.StatusOK, map[string]any{"id": 1})
+	}), WithSource("WebshareCLI/2.0.0 (Go; test)"))
+	if _, err := client.Profile.Get(context.Background()); err != nil {
+		t.Fatalf("Profile.Get: %v", err)
+	}
+	if got != "WebshareCLI/2.0.0 (Go; test)" {
+		t.Errorf("X-Webshare-Source = %q, want the WithSource override", got)
+	}
+
+	// A per-request header option wins over everything.
+	if _, err := client.Profile.Get(context.Background(), WithHeader("X-Webshare-Source", "per-request")); err != nil {
+		t.Fatalf("Profile.Get: %v", err)
+	}
+	if got != "per-request" {
+		t.Errorf("X-Webshare-Source = %q, want the per-request header override", got)
 	}
 }
 

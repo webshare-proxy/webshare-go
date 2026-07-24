@@ -26,6 +26,7 @@ type requestConfig struct {
 	timeout            time.Duration
 	subuserID          *int64
 	federatedUserID    *int64
+	source             string
 	headers            http.Header
 	err                error
 }
@@ -135,6 +136,16 @@ func WithSubuser(id int64) RequestOption {
 func WithFederatedUser(id int64) RequestOption {
 	return func(cfg *requestConfig) {
 		cfg.federatedUserID = &id
+	}
+}
+
+// WithSource replaces the X-Webshare-Source header value that identifies the
+// caller for API-side tracking. The default is
+// "WebshareSDK/<version> (Go; <runtime version>)"; products built on the SDK
+// (such as a CLI) can send their own product string instead.
+func WithSource(source string) RequestOption {
+	return func(cfg *requestConfig) {
+		cfg.source = source
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -23,9 +24,14 @@ const (
 	headerRequestID   = "X-Request-ID"
 	headerSubuser     = "X-Subuser"
 	headerFederation  = "X-Webshare-Federated-Access"
+	headerSource      = "X-Webshare-Source"
 	contentTypeJSON   = "application/json"
 	acceptJSONDefault = "application/json"
 )
+
+// defaultSource is the default X-Webshare-Source header value, identifying
+// the SDK and the Go runtime for API-side caller tracking.
+var defaultSource = "WebshareSDK/" + Version + " (Go; " + runtime.Version() + ")"
 
 // authMode describes how an operation authenticates.
 type authMode int
@@ -264,6 +270,11 @@ func (c *Client) attempt(ctx context.Context, cfg requestConfig, method, rawURL 
 		req.Header.Set("Authorization", token.authorizationHeader())
 	}
 	req.Header.Set("User-Agent", "webshare-go/"+Version)
+	source := cfg.source
+	if source == "" {
+		source = defaultSource
+	}
+	req.Header.Set(headerSource, source)
 	if accept == "" {
 		accept = acceptJSONDefault
 	}
