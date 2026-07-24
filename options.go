@@ -60,9 +60,9 @@ func WithTokenSource(ts TokenSource) RequestOption {
 
 // WithUnauthenticated constructs a client without credentials: NewClient
 // neither requires a key nor reads WEBSHARE_API_KEY. Only unauthenticated
-// operations (login, registration, password reset, referral code info, the
-// download endpoints) can be called; authenticated operations fail with a
-// clear client-side error until credentials are provided.
+// operations (referral code info and the tokenized download endpoints) can
+// be called; authenticated operations fail with a clear client-side error
+// until credentials are provided.
 func WithUnauthenticated() RequestOption {
 	return func(cfg *requestConfig) {
 		cfg.unauthenticated = true

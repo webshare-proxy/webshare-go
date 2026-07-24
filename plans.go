@@ -165,32 +165,6 @@ func (s *PlansService) Update(ctx context.Context, id int, params PlanUpdatePara
 	return out, nil
 }
 
-// PlanUpgradeParams are the parameters for PlansService.Upgrade. They match
-// the pricing parameters plus a payment method and recaptcha.
-type PlanUpgradeParams struct {
-	// PlanConfiguration describes the upgraded plan.
-	PlanConfiguration
-	// PaymentMethod selects the payment method.
-	PaymentMethod PaymentMethodRef `json:"payment_method"`
-	// Recaptcha is the recaptcha token. Only required when a payment is
-	// required.
-	Recaptcha string `json:"recaptcha,omitempty"`
-}
-
-// Upgrade upgrades an existing plan, crediting the subscription for the
-// remainder of the current plan. Recaptcha validation is required when a
-// payment is required; with enough account credits no payment is needed.
-// When a payment is required the docs mark this endpoint as usable only from
-// the Webshare dashboard, not programmatically.
-func (s *PlansService) Upgrade(ctx context.Context, id int, params PlanUpgradeParams, opts ...RequestOption) (*CheckoutResult, error) {
-	out := &CheckoutResult{}
-	path := "/api/v2/subscription/plan/" + strconv.Itoa(id) + "/upgrade/"
-	if err := s.client.doJSON(ctx, http.MethodPost, path, nil, params, out, opts); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PlanCancelResult is the response of PlansService.Cancel.
 type PlanCancelResult struct {
 	// Success reports whether the cancellation succeeded.

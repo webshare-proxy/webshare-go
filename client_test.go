@@ -227,7 +227,7 @@ func TestNoRetryOnPOST(t *testing.T) {
 		attempts.Add(1)
 		writeJSON(t, w, http.StatusInternalServerError, map[string]any{"detail": "boom"})
 	}))
-	_, err := client.APIKeys.Create(context.Background(), APIKeyCreateParams{Label: "x"})
+	_, err := client.IPAuthorizations.Create(context.Background(), IPAuthorizationCreateParams{IPAddress: "10.1.2.3"})
 	var apiErr *Error
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("err = %v, want *Error", err)
@@ -244,14 +244,14 @@ func TestRetryNonIdempotentOptIn(t *testing.T) {
 			writeJSON(t, w, http.StatusInternalServerError, map[string]any{"detail": "boom"})
 			return
 		}
-		writeJSON(t, w, http.StatusOK, map[string]any{"id": 9, "label": "x"})
+		writeJSON(t, w, http.StatusOK, map[string]any{"id": 9, "ip_address": "10.1.2.3"})
 	}))
-	key, err := client.APIKeys.Create(context.Background(), APIKeyCreateParams{Label: "x"}, WithRetryNonIdempotent())
+	auth, err := client.IPAuthorizations.Create(context.Background(), IPAuthorizationCreateParams{IPAddress: "10.1.2.3"}, WithRetryNonIdempotent())
 	if err != nil {
-		t.Fatalf("APIKeys.Create: %v", err)
+		t.Fatalf("IPAuthorizations.Create: %v", err)
 	}
-	if key.ID != 9 {
-		t.Errorf("key.ID = %d, want 9", key.ID)
+	if auth.ID != 9 {
+		t.Errorf("auth.ID = %d, want 9", auth.ID)
 	}
 	if got := attempts.Load(); got != 2 {
 		t.Errorf("attempts = %d, want 2 (opt-in retry)", got)
@@ -456,7 +456,7 @@ func TestErrorRetryAfterExposed(t *testing.T) {
 		w.Header().Set("Retry-After", "2")
 		writeJSON(t, w, http.StatusTooManyRequests, map[string]any{"detail": "throttled"})
 	}))
-	_, err := client.APIKeys.Create(context.Background(), APIKeyCreateParams{Label: "x"})
+	_, err := client.IPAuthorizations.Create(context.Background(), IPAuthorizationCreateParams{IPAddress: "10.1.2.3"})
 	var apiErr *Error
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("err = %v, want *Error", err)

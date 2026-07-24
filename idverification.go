@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-// IDVerificationService exposes the ID verification operations. Webshare
-// uses Stripe Identity: the Stripe JS library must be used with the returned
-// client secret to complete the verification.
+// IDVerificationService exposes the read-only ID verification status.
+// Webshare uses Stripe Identity; verifications are completed from the
+// dashboard.
 type IDVerificationService struct {
 	client *Client
 }
@@ -20,13 +20,13 @@ type IDVerificationState string
 const (
 	// IDVerificationNotRequired means no ID verification is needed.
 	IDVerificationNotRequired IDVerificationState = "not-required"
-	// IDVerificationRequested means the account must verify; call Start.
+	// IDVerificationRequested means the account must verify via the
+	// dashboard.
 	IDVerificationRequested IDVerificationState = "requested"
-	// IDVerificationPending means Start succeeded and the client secret is
-	// available for Stripe JS.
+	// IDVerificationPending means a verification was started and the client
+	// secret is available for Stripe JS.
 	IDVerificationPending IDVerificationState = "pending"
-	// IDVerificationProcessing means Complete was called and Stripe is
-	// processing the verification.
+	// IDVerificationProcessing means Stripe is processing the verification.
 	IDVerificationProcessing IDVerificationState = "processing"
 	// IDVerificationFailed means the verification failed.
 	IDVerificationFailed IDVerificationState = "failed"
@@ -61,29 +61,6 @@ type IDVerification struct {
 func (s *IDVerificationService) Get(ctx context.Context, opts ...RequestOption) (*IDVerification, error) {
 	out := &IDVerification{}
 	if err := s.client.doJSON(ctx, http.MethodGet, "/api/v2/idverification/", nil, nil, out, opts); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Start starts an ID verification to receive the client secret. Allowed only
-// from the requested state, or from failed while failure attempts remain. On
-// success the state becomes pending.
-func (s *IDVerificationService) Start(ctx context.Context, opts ...RequestOption) (*IDVerification, error) {
-	out := &IDVerification{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/idverification/start/", nil, struct{}{}, out, opts); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Complete notifies the API to process a verification after finishing it
-// with Stripe JS. The state must be pending; on success it becomes
-// processing. Returns a 400 error when the Stripe JS verification was not
-// completed.
-func (s *IDVerificationService) Complete(ctx context.Context, opts ...RequestOption) (*IDVerification, error) {
-	out := &IDVerification{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/idverification/complete/", nil, struct{}{}, out, opts); err != nil {
 		return nil, err
 	}
 	return out, nil

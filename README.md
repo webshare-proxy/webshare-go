@@ -110,10 +110,9 @@ The returned `Token` carries the value and the Authorization header scheme
 (`Token` by default), so alternative schemes such as `Bearer` plug in without
 changes elsewhere.
 
-Unauthenticated operations (login, registration, password reset, referral
-code info and the download endpoints) never send the Authorization header. To
-build a client without credentials at all, for example before a login flow,
-opt out explicitly:
+Unauthenticated operations (referral code info and the tokenized download
+endpoints) never send the Authorization header. To build a client without
+credentials at all, opt out explicitly:
 
 ```go
 client, err := webshare.NewClient(webshare.WithUnauthenticated())
@@ -152,16 +151,16 @@ per-field validation messages. Transport failures are wrapped in
 ```go
 var apiErr *webshare.Error
 if errors.As(err, &apiErr) {
-	if apiErr.Code == "2fa_needed" {
-		// submit a code with client.TwoFactorAuth.SubmitCode, then retry
+	if apiErr.Code == "account_suspended" {
+		// check client.Verification.GetSuspension for details
 	}
 }
 ```
 
-Error codes worth switching on: `2fa_needed` (submit a 2FA code and retry),
-`account_suspended` and `account_deleted` (account state, returned by any
-call), and `api_key_not_allowed` (the endpoint is session-token-only — API
-key management and 2FA method endpoints cannot be called with an API key).
+Error codes worth switching on: `account_suspended` and `account_deleted`
+(account state, returned by any call). If you authenticate with a login
+token through a custom `TokenSource` instead of an API key, calls can also
+return `2fa_needed` until the session completes two-factor authentication.
 
 ## Retries
 
@@ -173,7 +172,7 @@ idempotent requests (GET, PUT, DELETE) unless opted in:
 ```go
 client, err := webshare.NewClient(webshare.WithMaxRetries(5))
 // or per request:
-key, err := client.APIKeys.Create(ctx, params, webshare.WithRetryNonIdempotent())
+auth, err := client.IPAuthorizations.Create(ctx, params, webshare.WithRetryNonIdempotent())
 ```
 
 ## Timeouts

@@ -54,23 +54,23 @@ func TestUnauthenticatedOperationsNeverSendAuth(t *testing.T) {
 }
 
 func TestUnauthenticatedClient(t *testing.T) {
-	// A pre-login CLI flow builds a credential-less client explicitly; the
-	// env key must not leak in.
+	// A credential-less client (e.g. resolving a referral code before any
+	// key exists) is built explicitly; the env key must not leak in.
 	t.Setenv("WEBSHARE_API_KEY", "env-key-should-not-be-used")
 	recorder := &authRecorder{}
-	server := httptest.NewServer(recorder.handler(t, http.StatusOK, map[string]any{"token": "login-token"}))
+	server := httptest.NewServer(recorder.handler(t, http.StatusOK, map[string]any{"referral_code": "abc"}))
 	defer server.Close()
 	client, err := NewClient(WithUnauthenticated(), WithBaseURL(server.URL))
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
 
-	result, err := client.Auth.Login(context.Background(), LoginParams{Email: "a@b.c", Password: "pw", Recaptcha: "r"})
+	info, err := client.Referral.GetCodeInfo(context.Background(), "abc")
 	if err != nil {
-		t.Fatalf("Login: %v", err)
+		t.Fatalf("GetCodeInfo: %v", err)
 	}
-	if result.Token != "login-token" {
-		t.Errorf("Token = %q, want login-token", result.Token)
+	if info.ReferralCode != "abc" {
+		t.Errorf("ReferralCode = %q, want abc", info.ReferralCode)
 	}
 	if recorder.got != "" {
 		t.Errorf("Authorization = %q, want empty on unauthenticated client", recorder.got)
@@ -110,33 +110,5 @@ func TestEmptyAPIKeyTreatedAsAbsent(t *testing.T) {
 	}
 	if recorder.got != "Token env-key" {
 		t.Errorf("Authorization = %q, want %q", recorder.got, "Token env-key")
-	}
-}
-
-func TestAuthOptionalActivationComplete(t *testing.T) {
-	// Credentialed client: the header is sent.
-	recorder := &authRecorder{}
-	client := newTestClient(t, recorder.handler(t, http.StatusOK, map[string]any{"token": "t"}))
-	if _, err := client.Auth.CompleteActivation(context.Background(), ActivationCompleteParams{ActivationToken: "x"}); err != nil {
-		t.Fatalf("CompleteActivation: %v", err)
-	}
-	if recorder.got != "Token test-api-key" {
-		t.Errorf("Authorization = %q, want the credential on an auth-optional operation", recorder.got)
-	}
-
-	// Unauthenticated client: no header, but the call still works.
-	t.Setenv("WEBSHARE_API_KEY", "")
-	recorder = &authRecorder{}
-	server := httptest.NewServer(recorder.handler(t, http.StatusOK, map[string]any{"token": "t"}))
-	defer server.Close()
-	anon, err := NewClient(WithUnauthenticated(), WithBaseURL(server.URL))
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
-	if _, err := anon.Auth.CompleteActivation(context.Background(), ActivationCompleteParams{ActivationToken: "x"}); err != nil {
-		t.Fatalf("CompleteActivation: %v", err)
-	}
-	if recorder.got != "" {
-		t.Errorf("Authorization = %q, want empty without credentials", recorder.got)
 	}
 }

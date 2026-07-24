@@ -35,10 +35,10 @@ func main() {
 			fmt.Printf("field %q: %v\n", field, messages)
 		}
 		switch apiErr.Code {
-		case "2fa_needed":
-			fmt.Println("submit a code with client.TwoFactorAuth.SubmitCode and retry")
 		case "account_suspended":
 			fmt.Println("check client.Verification.GetSuspension for details")
+		case "account_deleted":
+			fmt.Println("the account was deleted; all API calls return this code")
 		}
 	case errors.As(err, &reqErr):
 		fmt.Printf("transport error: %v\n", reqErr.Unwrap())

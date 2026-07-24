@@ -136,17 +136,6 @@ pages. See the pagination section of the [README](README.md#pagination).
 | `Delete(ctx, id int, SubuserGetParams) error` | Delete a sub-user. | [subuser/delete](https://apidocs.webshare.io/subuser/delete) |
 | `RefreshProxyList(ctx, id int) (*Subuser, error)` | Refresh a sub-user's custom proxy list. | [subuser/refresh_proxy_list](https://apidocs.webshare.io/subuser/refresh_proxy_list) |
 
-## client.APIKeys — API keys (session-token-only)
-
-| Method | Description | Docs |
-|---|---|---|
-| `List(ctx, APIKeyListParams) (*Page[APIKey], error)` | List API keys. | [apikeys/list](https://apidocs.webshare.io/apikeys/list) |
-| `ListAll(ctx, APIKeyListParams) iter.Seq2[APIKey, error]` | Lazily iterate every API key across all pages. | [apikeys/list](https://apidocs.webshare.io/apikeys/list) |
-| `Create(ctx, APIKeyCreateParams) (*APIKey, error)` | Create an API key (the only place the full key appears). | [apikeys/create](https://apidocs.webshare.io/apikeys/create) |
-| `Get(ctx, id int) (*APIKey, error)` | Retrieve an API key. | [apikeys/retrieve](https://apidocs.webshare.io/apikeys/retrieve) |
-| `Update(ctx, id int, APIKeyUpdateParams) (*APIKey, error)` | Update an API key's label. | [apikeys/update](https://apidocs.webshare.io/apikeys/update) |
-| `Delete(ctx, id int) error` | Delete an API key. | [apikeys/delete](https://apidocs.webshare.io/apikeys/delete) |
-
 ## client.Profile — User profile
 
 | Method | Description | Docs |
@@ -166,43 +155,11 @@ pages. See the pagination section of the [README](README.md#pagination).
 | `Dismiss(ctx, id int) (*Notification, error)` | Dismiss a notification. | [notifications/dismiss](https://apidocs.webshare.io/notifications/dismiss) |
 | `Restore(ctx, id int) (*Notification, error)` | Restore a dismissed notification. | [notifications/restore](https://apidocs.webshare.io/notifications/restore) |
 
-## client.Auth — Session and account lifecycle
+## client.IDVerification — ID verification (read-only)
 
 | Method | Description | Docs |
 |---|---|---|
-| `Register(ctx, RegisterParams) (*AuthResult, error)` | Register a local account (recaptcha; dashboard-only per docs). | [registerandlogin/local-account](https://apidocs.webshare.io/registerandlogin/local-account) |
-| `RegisterSocial(ctx, RegisterSocialParams) (*AuthResult, error)` | Register via a social provider. | [registerandlogin/social-account](https://apidocs.webshare.io/registerandlogin/social-account) |
-| `Login(ctx, LoginParams) (*TokenResult, error)` | Sign in with email and password (recaptcha; dashboard-only per docs). | [registerandlogin/local-account](https://apidocs.webshare.io/registerandlogin/local-account) |
-| `LoginSocial(ctx, LoginSocialParams) (*TokenResult, error)` | Sign in via a social provider. | [registerandlogin/social-account](https://apidocs.webshare.io/registerandlogin/social-account) |
-| `Logout(ctx) error` | Invalidate the token used for the call. | [registerandlogin/logout](https://apidocs.webshare.io/registerandlogin/logout) |
-| `ChangePassword(ctx, ChangePasswordParams) error` | Change the password (disables all other tokens). | [registerandlogin/change-password](https://apidocs.webshare.io/registerandlogin/change-password) |
-| `RequestPasswordReset(ctx, PasswordResetRequestParams) error` | Request a password reset email. | [registerandlogin/reset-password](https://apidocs.webshare.io/registerandlogin/reset-password) |
-| `CompletePasswordReset(ctx, PasswordResetCompleteParams) (*TokenResult, error)` | Complete a password reset; returns a new token. | [registerandlogin/reset-password](https://apidocs.webshare.io/registerandlogin/reset-password) |
-| `RequestEmailChange(ctx, EmailChangeRequestParams) error` | Request an email change. | [registerandlogin/change-email](https://apidocs.webshare.io/registerandlogin/change-email) |
-| `CompleteEmailChange(ctx, EmailChangeCompleteParams) error` | Complete an email change (authenticated). | [registerandlogin/change-email](https://apidocs.webshare.io/registerandlogin/change-email) |
-| `GetActivation(ctx) (*ActivationStatus, error)` | Read the account activation status. | [registerandlogin/activate-account](https://apidocs.webshare.io/registerandlogin/activate-account) |
-| `ResendActivation(ctx) (*ActivationStatus, error)` | Re-send the activation email. | [registerandlogin/activate-account](https://apidocs.webshare.io/registerandlogin/activate-account) |
-| `CompleteActivation(ctx, ActivationCompleteParams) (*TokenResult, error)` | Complete activation; returns a new token. | [registerandlogin/activate-account](https://apidocs.webshare.io/registerandlogin/activate-account) |
-| `DeleteAccount(ctx, DeleteAccountParams) error` | Delete the account (recaptcha; dashboard-only per docs). | [registerandlogin/delete-account](https://apidocs.webshare.io/registerandlogin/delete-account) |
-| `DeleteAccountSocial(ctx, DeleteAccountSocialParams) error` | Delete a social-provider account. | [registerandlogin/delete-social-account](https://apidocs.webshare.io/registerandlogin/delete-social-account) |
-
-## client.TwoFactorAuth — Two-factor authentication
-
-| Method | Description | Docs |
-|---|---|---|
-| `GetMethod(ctx) (*TwoFactorMethod, error)` | Read the active 2FA method (session-token-only). | [twofactorauth/get-2fa-method](https://apidocs.webshare.io/twofactorauth/get-2fa-method) |
-| `ChangeMethod(ctx, TwoFactorMethodChangeParams) (*TwoFactorMethod, error)` | Change the 2FA method; `device_totp` returns a one-time secret key. | [twofactorauth/change-2fa-method](https://apidocs.webshare.io/twofactorauth/change-2fa-method) |
-| `ActivateMethod(ctx, id int, TwoFactorMethodActivateParams) (*TwoFactorMethod, error)` | Activate a TOTP method with two consecutive codes. | [twofactorauth/activate-2fa-method](https://apidocs.webshare.io/twofactorauth/activate-2fa-method) |
-| `SubmitCode(ctx, TwoFactorCodeParams) error` | Submit a 2FA code after a 403 `2fa_needed`. | [twofactorauth/enter-2fa-code](https://apidocs.webshare.io/twofactorauth/enter-2fa-code) |
-| `ResendEmailCode(ctx) (*TwoFactorEmailResendResult, error)` | Re-send the 2FA code email. | [twofactorauth/resend-2fa-email](https://apidocs.webshare.io/twofactorauth/resend-2fa-email) |
-
-## client.IDVerification — ID verification
-
-| Method | Description | Docs |
-|---|---|---|
-| `Get(ctx) (*IDVerification, error)` | Read the ID verification state. | [idverification/retrieve](https://apidocs.webshare.io/idverification/retrieve) |
-| `Start(ctx) (*IDVerification, error)` | Start a Stripe Identity verification; returns the client secret. | [idverification/start](https://apidocs.webshare.io/idverification/start) |
-| `Complete(ctx) (*IDVerification, error)` | Finish a verification after completing it with Stripe JS. | [idverification/complete](https://apidocs.webshare.io/idverification/complete) |
+| `Get(ctx) (*IDVerification, error)` | Read the ID verification status (read-only; verifications complete via the dashboard). | [idverification/retrieve](https://apidocs.webshare.io/idverification/retrieve) |
 
 ## client.Verification.Flows — Account verification: flows
 
@@ -259,7 +216,6 @@ pages. See the pagination section of the [README](README.md#pagination).
 |---|---|---|
 | `List(ctx, PaymentMethodListParams) (*Page[PaymentMethod], error)` | List payment methods (polymorphic on `Type`). | [billing/payment_methods](https://apidocs.webshare.io/billing/payment_methods) |
 | `ListAll(ctx, PaymentMethodListParams) iter.Seq2[PaymentMethod, error]` | Lazily iterate every payment method across all pages. | [billing/payment_methods](https://apidocs.webshare.io/billing/payment_methods) |
-| `Create(ctx, PaymentMethodCreateParams) (*PaymentMethodCreateResult, error)` | Start the Stripe SetupIntent flow to update the payment method. | [billing/update_payment_method](https://apidocs.webshare.io/billing/update_payment_method) |
 | `Get(ctx, id int) (*PaymentMethod, error)` | Retrieve a payment method. | [billing/payment_methods](https://apidocs.webshare.io/billing/payment_methods) |
 
 ## client.PendingPayments — Pending payments
@@ -286,8 +242,6 @@ pages. See the pagination section of the [README](README.md#pagination).
 | `GetAvailableAssets(ctx) (map[string]map[string]AssetInfo, error)` | Read the assets available per proxy category and subtype. | [subscription/assets](https://apidocs.webshare.io/subscription/assets) |
 | `Customize(ctx, SubscriptionCustomizeParams) (*SubscriptionCustomization, error)` | Read the customization limits for a plan. | [subscription/customize](https://apidocs.webshare.io/subscription/customize) |
 | `Pricing(ctx, SubscriptionPricingParams) (*SubscriptionPricing, error)` | Price a custom plan. | [subscription/pricing](https://apidocs.webshare.io/subscription/pricing) |
-| `Purchase(ctx, SubscriptionPurchaseParams) (*CheckoutResult, error)` | Purchase a plan (recaptcha when payment is required). | [subscription/purchase_plan](https://apidocs.webshare.io/subscription/purchase_plan) |
-| `Renew(ctx, SubscriptionRenewParams) (*CheckoutResult, error)` | Renew the subscription. | [subscription/renew](https://apidocs.webshare.io/subscription/renew) |
 | `EnableAutoRenewal(ctx) (*Subscription, error)` | Enable auto-renewal (payment method must be on file). | [subscription/auto_renewal](https://apidocs.webshare.io/subscription/auto_renewal) |
 | `CancelAutoRenewal(ctx) (*Subscription, error)` | Cancel auto-renewal; removes the payment method. | [subscription/auto_renewal](https://apidocs.webshare.io/subscription/auto_renewal) |
 
@@ -299,7 +253,6 @@ pages. See the pagination section of the [README](README.md#pagination).
 | `ListAll(ctx, PlanListParams) iter.Seq2[Plan, error]` | Lazily iterate every plan across all pages. | [subscription/plan](https://apidocs.webshare.io/subscription/plan) |
 | `Get(ctx, id int) (*Plan, error)` | Retrieve a plan. | [subscription/plan](https://apidocs.webshare.io/subscription/plan) |
 | `Update(ctx, id int, PlanUpdateParams) (*Plan, error)` | Update a plan's automatic refresh schedule. | [subscription/plan](https://apidocs.webshare.io/subscription/plan) |
-| `Upgrade(ctx, id int, PlanUpgradeParams) (*CheckoutResult, error)` | Upgrade a plan. | [subscription/plan](https://apidocs.webshare.io/subscription/plan) |
 | `Cancel(ctx, id int) (*PlanCancelResult, error)` | Cancel a plan; credits the remainder. | [subscription/plan](https://apidocs.webshare.io/subscription/plan) |
 
 ## client.Invoices — Invoices

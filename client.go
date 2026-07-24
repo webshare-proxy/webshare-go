@@ -57,16 +57,10 @@ type Client struct {
 	IPAuthorizations *IPAuthorizationsService
 	// Subusers exposes the sub-user operations.
 	Subusers *SubusersService
-	// APIKeys exposes the API key operations.
-	APIKeys *APIKeysService
 	// Profile exposes the user profile operations.
 	Profile *ProfileService
 	// Notifications exposes the notification operations.
 	Notifications *NotificationsService
-	// Auth exposes session and account lifecycle operations.
-	Auth *AuthService
-	// TwoFactorAuth exposes the two-factor authentication operations.
-	TwoFactorAuth *TwoFactorAuthService
 	// IDVerification exposes the ID verification operations.
 	IDVerification *IDVerificationService
 	// Verification exposes the account verification operations.
@@ -126,11 +120,8 @@ func NewClient(opts ...RequestOption) (*Client, error) {
 	c.DownloadTokens = &DownloadTokensService{client: c}
 	c.IPAuthorizations = &IPAuthorizationsService{client: c}
 	c.Subusers = &SubusersService{client: c}
-	c.APIKeys = &APIKeysService{client: c}
 	c.Profile = &ProfileService{client: c}
 	c.Notifications = &NotificationsService{client: c}
-	c.Auth = &AuthService{client: c}
-	c.TwoFactorAuth = &TwoFactorAuthService{client: c}
 	c.IDVerification = &IDVerificationService{client: c}
 	c.Verification = &VerificationService{
 		Flows:        &VerificationFlowsService{client: c},

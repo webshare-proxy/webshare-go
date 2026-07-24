@@ -43,9 +43,6 @@ const (
 	// authNone operations never send the Authorization header, even on a
 	// credentialed client (spec security: []).
 	authNone
-	// authOptional operations send the Authorization header only when the
-	// client has credentials.
-	authOptional
 )
 
 // withAuthMode marks an operation's authentication mode. It is applied after
@@ -260,8 +257,7 @@ func (c *Client) attempt(ctx context.Context, cfg requestConfig, method, rawURL 
 
 	// The token source is consulted on every attempt so refreshed
 	// credentials are picked up between retries. Unauthenticated operations
-	// never send the header; auth-optional operations send it only when a
-	// credential is available.
+	// never send the header.
 	if cfg.authMode != authNone && cfg.tokenSource != nil {
 		token, err := cfg.tokenSource.Token(attemptCtx)
 		if err != nil {

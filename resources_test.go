@@ -285,41 +285,6 @@ func TestNotificationDismiss(t *testing.T) {
 	}
 }
 
-func TestAuthGetActivation(t *testing.T) {
-	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requireRequest(t, r, http.MethodGet, "/api/v2/activation/")
-		writeJSON(t, w, http.StatusOK, map[string]any{
-			"email_is_verified":                       true,
-			"last_time_email_verification_email_sent": nil,
-			"created_at":                              "2019-05-09T23:34:00.095501-07:00",
-			"updated_at":                              "2019-05-09T23:34:00.095501-07:00",
-		})
-	}))
-	status, err := client.Auth.GetActivation(context.Background())
-	if err != nil {
-		t.Fatalf("GetActivation: %v", err)
-	}
-	if !status.EmailIsVerified || status.LastTimeEmailVerificationEmailSent != nil {
-		t.Errorf("unexpected status: %+v", status)
-	}
-}
-
-func TestTwoFactorChangeMethodSecretKey(t *testing.T) {
-	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requireRequest(t, r, http.MethodPost, "/api/v2/twofactorauth/method/")
-		writeJSON(t, w, http.StatusOK, map[string]any{
-			"id": 137, "type": "device_totp", "active": false, "secret_key": "deadbeef",
-		})
-	}))
-	method, err := client.TwoFactorAuth.ChangeMethod(context.Background(), TwoFactorMethodChangeParams{Type: MethodDeviceTOTP})
-	if err != nil {
-		t.Fatalf("ChangeMethod: %v", err)
-	}
-	if method.SecretKey != "deadbeef" {
-		t.Errorf("SecretKey = %q, want deadbeef", method.SecretKey)
-	}
-}
-
 func TestIDVerificationGet(t *testing.T) {
 	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requireRequest(t, r, http.MethodGet, "/api/v2/idverification/")

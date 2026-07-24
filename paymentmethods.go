@@ -82,39 +82,6 @@ func (s *PaymentMethodsService) ListAll(ctx context.Context, params PaymentMetho
 	})
 }
 
-// PaymentMethodCreateParams are the parameters for
-// PaymentMethodsService.Create.
-type PaymentMethodCreateParams struct {
-	// Recaptcha is the recaptcha token. Required.
-	Recaptcha string `json:"recaptcha"`
-}
-
-// PaymentMethodCreateResult is the response of PaymentMethodsService.Create.
-type PaymentMethodCreateResult struct {
-	// PendingPayment is the ID of the pending payment instance.
-	PendingPayment int `json:"pending_payment"`
-	// StripeClientSecret is the client secret for the Stripe SetupIntent.
-	StripeClientSecret string `json:"stripe_client_secret"`
-	// StripeSetupIntent is the ID of the Stripe SetupIntent as documented
-	// in the response fields table.
-	StripeSetupIntent string `json:"stripe_setup_intent,omitempty"`
-	// StripePaymentIntent appears in the documented example response in
-	// place of StripeSetupIntent; the docs are inconsistent, so both fields
-	// are decoded.
-	StripePaymentIntent string `json:"stripe_payment_intent,omitempty"`
-}
-
-// Create starts the update-payment-method flow. The response contains a
-// Stripe SetupIntent client secret that must be confirmed via Stripe JS.
-// This endpoint requires recaptcha validation.
-func (s *PaymentMethodsService) Create(ctx context.Context, params PaymentMethodCreateParams, opts ...RequestOption) (*PaymentMethodCreateResult, error) {
-	out := &PaymentMethodCreateResult{}
-	if err := s.client.doJSON(ctx, http.MethodPost, "/api/v2/payment/method/", nil, params, out, opts); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Get retrieves a payment method. The active payment method ID is available
 // on the subscription object.
 func (s *PaymentMethodsService) Get(ctx context.Context, id int, opts ...RequestOption) (*PaymentMethod, error) {
