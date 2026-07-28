@@ -3,8 +3,10 @@ package webshare
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Error is returned when the Webshare API responds with a non-success status
@@ -56,9 +58,15 @@ func (e *Error) Error() string {
 		b.WriteString(truncate(e.Detail, maxDetailLen))
 	}
 	if len(e.FieldErrors) > 0 {
-		fields := make([]string, 0, len(e.FieldErrors))
-		for field, msgs := range e.FieldErrors {
-			fields = append(fields, field+": "+strings.Join(msgs, "; "))
+		// Sorted so the rendered message is deterministic.
+		names := make([]string, 0, len(e.FieldErrors))
+		for field := range e.FieldErrors {
+			names = append(names, field)
+		}
+		sort.Strings(names)
+		fields := make([]string, 0, len(names))
+		for _, field := range names {
+			fields = append(fields, field+": "+strings.Join(e.FieldErrors[field], "; "))
 		}
 		fmt.Fprintf(&b, " [%s]", strings.Join(fields, ", "))
 	}
@@ -132,10 +140,14 @@ const (
 	maxDetailLen = 2048
 )
 
-// truncate shortens s to at most n bytes, marking the cut.
+// truncate shortens s to at most n bytes, marking the cut. The cut is moved
+// back to a rune boundary so a multi-byte character is never split.
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
 	}
 	return s[:n] + "... (truncated)"
 }
@@ -185,6 +197,12 @@ func parseAPIError(statusCode int, requestID string, body []byte) *Error {
 	var s string
 	if err := json.Unmarshal(body, &s); err == nil {
 		apiErr.Detail = s
+		return apiErr
+	}
+
+	// Some DRF errors are a top-level list of messages.
+	if msgs := parseFieldErrorList(body); msgs != nil {
+		apiErr.Detail = strings.Join(msgs, "; ")
 		return apiErr
 	}
 

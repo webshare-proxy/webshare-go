@@ -156,6 +156,20 @@ func backboneUsername(params ProxyURLParams) (string, error) {
 	return strings.Join(parts, "-"), nil
 }
 
+// normalizeCountryCodes validates that every code is a 2-letter ISO 3166-1
+// alpha-2 code and upper-cases it, matching the format the download
+// endpoints expect.
+func normalizeCountryCodes(codes []string) ([]string, error) {
+	out := make([]string, 0, len(codes))
+	for _, code := range codes {
+		if len(code) != 2 || !isAlpha(code) {
+			return nil, fmt.Errorf("invalid country code %q (must be a 2-letter ISO 3166-1 alpha-2 code)", code)
+		}
+		out = append(out, strings.ToUpper(code))
+	}
+	return out, nil
+}
+
 func isAlpha(s string) bool {
 	for _, r := range s {
 		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') {

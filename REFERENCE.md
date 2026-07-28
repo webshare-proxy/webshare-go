@@ -259,7 +259,7 @@ pages. See the pagination section of the [README](README.md#pagination).
 
 | Method | Description | Docs |
 |---|---|---|
-| `Download(ctx, subscriptionTransactionID string) ([]byte, error)` | Download an invoice as PDF bytes. | [subscription/download_invoice](https://apidocs.webshare.io/subscription/download_invoice) |
+| `Download(ctx, subscriptionTransactionID int) ([]byte, error)` | Download an invoice as PDF bytes; takes the `Transaction.ID`. | [subscription/download_invoice](https://apidocs.webshare.io/subscription/download_invoice) |
 
 ## client.Referral — Referral and coupon codes
 

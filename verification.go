@@ -3,6 +3,7 @@ package webshare
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"iter"
@@ -159,9 +160,13 @@ type SubmitEvidenceParams struct {
 	Files []File
 }
 
-// SubmitEvidence submits evidence for a verification. The request is encoded
-// as multipart/form-data.
+// SubmitEvidence submits evidence for a verification. At least one of
+// Explanation and Files must be set. The request is encoded as
+// multipart/form-data.
 func (s *VerificationFlowsService) SubmitEvidence(ctx context.Context, id int, params SubmitEvidenceParams, opts ...RequestOption) (*VerificationFlow, error) {
+	if params.Explanation == "" && len(params.Files) == 0 {
+		return nil, errors.New("webshare: submit evidence: an explanation or at least one file is required")
+	}
 	fields := map[string]string{}
 	if params.Explanation != "" {
 		fields["explanation"] = params.Explanation
@@ -291,8 +296,12 @@ type SubmitAnswerParams struct {
 }
 
 // SubmitAnswer submits an answer for a verification question with optional
-// attachments. The request is encoded as multipart/form-data.
+// attachments. At least one of Answer and Files must be set. The request is
+// encoded as multipart/form-data.
 func (s *VerificationQuestionsService) SubmitAnswer(ctx context.Context, questionID int, params SubmitAnswerParams, opts ...RequestOption) (*VerificationAnswer, error) {
+	if params.Answer == "" && len(params.Files) == 0 {
+		return nil, errors.New("webshare: submit answer: an answer or at least one file is required")
+	}
 	fields := map[string]string{}
 	if params.Answer != "" {
 		fields["answer"] = params.Answer

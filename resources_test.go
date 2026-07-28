@@ -507,15 +507,16 @@ func TestInvoiceDownloadPDFBytes(t *testing.T) {
 	pdf := []byte("%PDF-1.7 fake")
 	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requireRequest(t, r, http.MethodGet, "/api/v2/invoices/download")
-		if r.URL.Query().Get("subscription_transaction_id") != "tx-9" {
-			t.Errorf("subscription_transaction_id = %q, want tx-9", r.URL.Query().Get("subscription_transaction_id"))
+		if r.URL.Query().Get("subscription_transaction_id") != "9" {
+			t.Errorf("subscription_transaction_id = %q, want 9", r.URL.Query().Get("subscription_transaction_id"))
 		}
 		w.Header().Set("Content-Type", "application/pdf")
 		if _, err := w.Write(pdf); err != nil {
 			t.Errorf("writing response: %v", err)
 		}
 	}))
-	got, err := client.Invoices.Download(context.Background(), "tx-9")
+	// Takes the Transaction.ID integer directly.
+	got, err := client.Invoices.Download(context.Background(), 9)
 	if err != nil {
 		t.Fatalf("Download: %v", err)
 	}
@@ -536,5 +537,62 @@ func TestApplyCouponCodeFieldErrors(t *testing.T) {
 	}
 	if got := apiErr.FieldErrors["code"]; len(got) != 1 || got[0] != "Invalid promo code." {
 		t.Errorf("FieldErrors[code] = %v, want [Invalid promo code.]", got)
+	}
+}
+
+func TestProxyDownloadCountryCodesNormalized(t *testing.T) {
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requireRequest(t, r, http.MethodGet, "/api/v2/proxy/list/download/tok/US-FR/any/username/direct/-/")
+		if _, err := io.WriteString(w, "ok"); err != nil {
+			t.Errorf("writing response: %v", err)
+		}
+	}))
+	params := ProxyDownloadParams{
+		Token:                "tok",
+		CountryCodes:         []string{"us", "FR"},
+		AuthenticationMethod: AuthMethodUsername,
+		EndpointMode:         ModeDirect,
+	}
+	if _, err := client.Proxies.Download(context.Background(), params); err != nil {
+		t.Fatalf("Download: %v", err)
+	}
+
+	params.CountryCodes = []string{"USA"}
+	if _, err := client.Proxies.Download(context.Background(), params); err == nil {
+		t.Error("expected an error for a 3-letter country code")
+	}
+	if _, err := client.Proxies.DownloadURL(params); err == nil {
+		t.Error("expected an error for a 3-letter country code in DownloadURL")
+	}
+}
+
+func TestReplacedProxiesDownloadCountryCodesNormalized(t *testing.T) {
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("country_codes"); got != "US-FR" {
+			t.Errorf("country_codes = %q, want US-FR", got)
+		}
+		if _, err := io.WriteString(w, "ok"); err != nil {
+			t.Errorf("writing response: %v", err)
+		}
+	}))
+	params := ReplacedProxyDownloadParams{DownloadToken: "key", CountryCodes: []string{"us", "fr"}}
+	if _, err := client.ReplacedProxies.Download(context.Background(), params); err != nil {
+		t.Fatalf("Download: %v", err)
+	}
+	params.CountryCodes = []string{"u/s"}
+	if _, err := client.ReplacedProxies.Download(context.Background(), params); err == nil {
+		t.Error("expected an error for an invalid country code")
+	}
+}
+
+func TestSubmitEvidenceRequiresContent(t *testing.T) {
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("no request should be sent for empty evidence")
+	}))
+	if _, err := client.Verification.Flows.SubmitEvidence(context.Background(), 1, SubmitEvidenceParams{}); err == nil {
+		t.Error("expected an error for evidence with neither explanation nor files")
+	}
+	if _, err := client.Verification.Questions.SubmitAnswer(context.Background(), 1, SubmitAnswerParams{}); err == nil {
+		t.Error("expected an error for an answer with neither text nor files")
 	}
 }

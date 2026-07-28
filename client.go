@@ -36,6 +36,10 @@ const (
 
 // Client is the Webshare API client. Create one with NewClient. All API
 // operations are grouped into resource services exposed as fields.
+//
+// A Client is safe for concurrent use by multiple goroutines: its
+// configuration is immutable after NewClient, and per-request options are
+// applied to a copy.
 type Client struct {
 	cfg requestConfig
 

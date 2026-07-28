@@ -222,6 +222,26 @@ download URL, and `client.Proxies.Download` fetches the list as plain text.
 
 Runnable programs for all of the above live in [examples](examples).
 
+## Testing your code
+
+The SDK talks plain HTTP, so testing code that uses it needs no mocks —
+point a client at an `httptest.Server`:
+
+```go
+server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, `{"count":1,"next":null,"previous":null,"results":[{"id":"d-1","port":8080}]}`)
+}))
+defer server.Close()
+
+client, err := webshare.NewClient(webshare.WithAPIKey("test"), webshare.WithBaseURL(server.URL))
+```
+
+`WithHTTPClient` accepts a custom `*http.Client` (for example with a
+recording `RoundTripper`) when you need finer control. For code that should
+be testable without a concrete `*webshare.Client`, declare a small interface
+of just the methods you use and let your code depend on that.
+
 ## Supported versions
 
 | SDK | Go |

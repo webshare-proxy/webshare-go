@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// Ptr returns a pointer to v, for use in optional request fields. The typed
+// helpers below cover the common cases; Ptr covers everything else.
+func Ptr[T any](v T) *T { return &v }
+
 // Int returns a pointer to v, for use in optional request fields.
 func Int(v int) *int { return &v }
 

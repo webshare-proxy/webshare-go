@@ -153,7 +153,8 @@ type ProxyDownloadParams struct {
 	// Required.
 	Token string
 	// CountryCodes limits the download to the given ISO 3166-1 alpha-2
-	// country codes (hyphen-joined in the URL). Empty means all countries.
+	// country codes (validated, upper-cased and hyphen-joined in the URL).
+	// Empty means all countries.
 	CountryCodes []string
 	// Protocol fills the literal proxy protocol slot of the download path.
 	// Defaults to "any".
@@ -190,7 +191,11 @@ func (p ProxyDownloadParams) path() (string, error) {
 	}
 	countries := "-"
 	if len(p.CountryCodes) > 0 {
-		countries = strings.Join(p.CountryCodes, "-")
+		normalized, err := normalizeCountryCodes(p.CountryCodes)
+		if err != nil {
+			return "", fmt.Errorf("webshare: proxy download: %w", err)
+		}
+		countries = strings.Join(normalized, "-")
 	}
 	protocol := p.Protocol
 	if protocol == "" {
