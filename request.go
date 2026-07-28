@@ -96,8 +96,18 @@ func joinPath(escapedBase, path string) (unescaped, escaped string) {
 }
 
 // origin extracts the scheme://host origin of a URL for same-origin checks.
+// Default ports are stripped so "https://host" and "https://host:443" compare
+// as the same origin.
 func origin(u *url.URL) string {
-	return strings.ToLower(u.Scheme) + "://" + strings.ToLower(u.Host)
+	scheme := strings.ToLower(u.Scheme)
+	host := strings.ToLower(u.Host)
+	switch {
+	case scheme == "https" && strings.HasSuffix(host, ":443"):
+		host = strings.TrimSuffix(host, ":443")
+	case scheme == "http" && strings.HasSuffix(host, ":80"):
+		host = strings.TrimSuffix(host, ":80")
+	}
+	return scheme + "://" + host
 }
 
 // doJSON performs a request with an optional JSON body and decodes a JSON

@@ -546,3 +546,39 @@ func TestPerRequestHeaderOption(t *testing.T) {
 		t.Errorf("X-Custom = %q, want %q", got, "yes")
 	}
 }
+
+func TestPerRequestUnauthenticatedStripsCredentials(t *testing.T) {
+	// WithUnauthenticated on an individual call must not send the client's
+	// credentials, and authenticated operations must fail client-side
+	// instead of silently sending the key.
+	recorder := &authRecorder{}
+	client := newTestClient(t, recorder.handler(t, http.StatusOK, map[string]any{"referral_code": "abc"}))
+	if _, err := client.Referral.GetCodeInfo(context.Background(), "abc", WithUnauthenticated()); err != nil {
+		t.Fatalf("GetCodeInfo: %v", err)
+	}
+	if recorder.got != "" {
+		t.Errorf("Authorization = %q, want empty with per-request WithUnauthenticated", recorder.got)
+	}
+
+	recorder.seen = false
+	if _, err := client.Profile.Get(context.Background(), WithUnauthenticated()); err == nil {
+		t.Fatal("Profile.Get succeeded, want a client-side credentials error")
+	}
+	if recorder.seen {
+		t.Error("a request was sent for an authenticated operation stripped of credentials")
+	}
+}
+
+func TestWithHTTPClientNil(t *testing.T) {
+	if _, err := NewClient(WithAPIKey("k"), WithHTTPClient(nil)); err == nil {
+		t.Error("NewClient(WithHTTPClient(nil)) succeeded, want an error")
+	}
+
+	// Per-request use fails the call instead of panicking.
+	client := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(t, w, http.StatusOK, map[string]any{"id": 1})
+	}))
+	if _, err := client.Profile.Get(context.Background(), WithHTTPClient(nil)); err == nil {
+		t.Error("per-request WithHTTPClient(nil) succeeded, want an error")
+	}
+}

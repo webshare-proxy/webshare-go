@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -205,5 +206,31 @@ func TestStartingAfterPagination(t *testing.T) {
 	}
 	if len(protocols) != 2 || protocols[0] != "http" || protocols[1] != "socks" {
 		t.Errorf("protocols = %v, want [http socks]", protocols)
+	}
+}
+
+func TestOriginNormalizesDefaultPorts(t *testing.T) {
+	tests := []struct {
+		a, b string
+		same bool
+	}{
+		{"https://proxy.webshare.io", "https://proxy.webshare.io:443", true},
+		{"http://proxy.webshare.io", "http://proxy.webshare.io:80", true},
+		{"https://proxy.webshare.io", "https://proxy.webshare.io:8443", false},
+		{"http://proxy.webshare.io", "https://proxy.webshare.io", false},
+		{"https://PROXY.webshare.io:443", "https://proxy.webshare.io", true},
+	}
+	for _, tt := range tests {
+		ua, err := url.Parse(tt.a)
+		if err != nil {
+			t.Fatalf("parse %q: %v", tt.a, err)
+		}
+		ub, err := url.Parse(tt.b)
+		if err != nil {
+			t.Fatalf("parse %q: %v", tt.b, err)
+		}
+		if got := origin(ua) == origin(ub); got != tt.same {
+			t.Errorf("origin(%q) == origin(%q) is %v, want %v", tt.a, tt.b, got, tt.same)
+		}
 	}
 }

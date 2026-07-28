@@ -3,6 +3,7 @@ package webshare
 import (
 	"context"
 	"errors"
+	"fmt"
 	"iter"
 	"net/http"
 	"net/url"
@@ -72,8 +73,9 @@ type ReplacedProxyDownloadParams struct {
 	// DownloadToken is the key obtained from DownloadTokens.Get with the
 	// replaced_proxy scope. Required.
 	DownloadToken string
-	// CountryCodes limits the download to the given country codes
-	// (hyphen-joined). Empty means all countries.
+	// CountryCodes limits the download to the given ISO 3166-1 alpha-2
+	// country codes (validated, upper-cased and hyphen-joined). Empty means
+	// all countries.
 	CountryCodes []string
 	// AuthenticationType is AuthMethodUsername or AuthMethodSourceIP.
 	AuthenticationType AuthenticationMethod
@@ -100,7 +102,11 @@ func (s *ReplacedProxiesService) Download(ctx context.Context, params ReplacedPr
 	q := url.Values{}
 	q.Set("download_token", params.DownloadToken)
 	if len(params.CountryCodes) > 0 {
-		q.Set("country_codes", strings.Join(params.CountryCodes, "-"))
+		normalized, err := normalizeCountryCodes(params.CountryCodes)
+		if err != nil {
+			return "", fmt.Errorf("webshare: replaced proxy download: %w", err)
+		}
+		q.Set("country_codes", strings.Join(normalized, "-"))
 	}
 	setString(q, "authentication_type", string(params.AuthenticationType))
 	setString(q, "mode", string(params.Mode))

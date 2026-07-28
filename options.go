@@ -1,6 +1,7 @@
 package webshare
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -62,10 +63,12 @@ func WithTokenSource(ts TokenSource) RequestOption {
 // neither requires a key nor reads WEBSHARE_API_KEY. Only unauthenticated
 // operations (referral code info and the tokenized download endpoints) can
 // be called; authenticated operations fail with a clear client-side error
-// until credentials are provided.
+// until credentials are provided. Passed to an individual call, it strips
+// the client's credentials from that request.
 func WithUnauthenticated() RequestOption {
 	return func(cfg *requestConfig) {
 		cfg.unauthenticated = true
+		cfg.tokenSource = nil
 	}
 }
 
@@ -87,9 +90,14 @@ func WithBaseURL(rawURL string) RequestOption {
 	}
 }
 
-// WithHTTPClient sets the *http.Client used to execute requests.
+// WithHTTPClient sets the *http.Client used to execute requests. The client
+// must not be nil.
 func WithHTTPClient(hc *http.Client) RequestOption {
 	return func(cfg *requestConfig) {
+		if hc == nil {
+			cfg.err = errors.New("webshare: WithHTTPClient: client must not be nil")
+			return
+		}
 		cfg.httpClient = hc
 	}
 }

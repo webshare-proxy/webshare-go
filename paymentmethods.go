@@ -14,14 +14,17 @@ type PaymentMethodsService struct {
 	client *Client
 }
 
+// PaymentMethodType identifies the kind of a payment method.
+type PaymentMethodType string
+
 // Payment method types.
 const (
 	// PaymentMethodStripeCard is a Stripe card payment method; it carries
 	// the card-specific fields.
-	PaymentMethodStripeCard = "StripeCard"
+	PaymentMethodStripeCard PaymentMethodType = "StripeCard"
 	// PaymentMethodLinkPayment is a Stripe Link payment method without
 	// card-specific fields.
-	PaymentMethodLinkPayment = "LinkPayment"
+	PaymentMethodLinkPayment PaymentMethodType = "LinkPayment"
 )
 
 // PaymentMethod is a payment method associated with the account. Payment
@@ -31,7 +34,7 @@ type PaymentMethod struct {
 	// ID is the unique identifier of the payment method instance.
 	ID int `json:"id"`
 	// Type identifies the payment type, e.g. "StripeCard" or "LinkPayment".
-	Type string `json:"type"`
+	Type PaymentMethodType `json:"type"`
 	// Brand is the card brand (StripeCard only).
 	Brand string `json:"brand,omitempty"`
 	// Last4 holds the last four digits of the card (StripeCard only).

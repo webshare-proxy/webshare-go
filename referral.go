@@ -395,13 +395,14 @@ type ReferralEarnoutListParams struct {
 	PageSize *int
 }
 
-// ListEarnouts returns the earn-outs in paginated format. Note the endpoint
-// path has no trailing slash in the docs.
+// ListEarnouts returns the earn-outs in paginated format.
 func (s *ReferralService) ListEarnouts(ctx context.Context, params ReferralEarnoutListParams, opts ...RequestOption) (*Page[ReferralEarnout], error) {
 	q := url.Values{}
 	setInt(q, "page", params.Page)
 	setInt(q, "page_size", params.PageSize)
-	return getPage[ReferralEarnout](ctx, s.client, "/api/v2/referral/earnout", q, opts)
+	// The docs show this path without a trailing slash, but the live API
+	// 301s to the slashed form; request it directly to skip the redirect.
+	return getPage[ReferralEarnout](ctx, s.client, "/api/v2/referral/earnout/", q, opts)
 }
 
 // ListAllEarnouts returns a lazy iterator over every earn-out across all
