@@ -62,6 +62,7 @@ jobs:
     if: github.event_name == 'push'
     env:
       WEBSHARE_API_KEY: ${{ secrets.WEBSHARE_API_KEY }}
+      WEBSHARE_INTEGRATION_TEST: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         if: env.WEBSHARE_API_KEY != ''
