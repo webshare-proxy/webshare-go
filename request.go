@@ -24,12 +24,11 @@ const (
 	headerRequestID   = "X-Request-ID"
 	headerSubuser     = "X-Subuser"
 	headerFederation  = "X-Webshare-Federated-Access"
-	headerSource      = "X-Webshare-Source"
 	contentTypeJSON   = "application/json"
 	acceptJSONDefault = "application/json"
 )
 
-// defaultSource is the default X-Webshare-Source header value, identifying
+// defaultSource is the product token that leads the User-Agent, identifying
 // the SDK and the Go runtime for API-side caller tracking.
 var defaultSource = "WebshareSDK/" + Version + " (Go; " + runtime.Version() + ")"
 
@@ -275,12 +274,13 @@ func (c *Client) attempt(ctx context.Context, cfg requestConfig, method, rawURL 
 		}
 		req.Header.Set("Authorization", token.authorizationHeader())
 	}
-	req.Header.Set("User-Agent", "webshare-go/"+Version)
 	source := cfg.source
 	if source == "" {
 		source = defaultSource
 	}
-	req.Header.Set(headerSource, source)
+	// The product token leads, so the API can tell a CLI call from a plain SDK
+	// call; the library that carried it follows.
+	req.Header.Set("User-Agent", source+" webshare-go/"+Version)
 	if accept == "" {
 		accept = acceptJSONDefault
 	}
