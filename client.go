@@ -23,7 +23,7 @@ import (
 )
 
 // Version is the SDK version, reported in the User-Agent header.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // DefaultBaseURL is the default API base URL. It is the bare host: every
 // operation path carries its full /api/vN/... prefix.
