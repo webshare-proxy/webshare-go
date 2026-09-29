@@ -24,7 +24,7 @@ Options, usable on the client and on any individual call:
 | `WithRetryNonIdempotent()` | Opt POST/PATCH requests into retries |
 | `WithTimeout(d)` | Per-attempt timeout (default 60s) |
 | `WithSubuser(id)` | Act as a sub-user (X-Subuser header) |
-| `WithSource(s)` | Replace the X-Webshare-Source identification header |
+| `WithSource(s)` | Replace the product token leading the User-Agent |
 | `WithFederatedUser(id)` | Admin federated access header |
 | `WithHeader(k, v)` | Add an extra request header |
 

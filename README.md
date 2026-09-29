@@ -189,12 +189,13 @@ profile, err := client.Profile.Get(ctx, webshare.WithTimeout(2*time.Second))
 
 Contexts are honored everywhere, including while waiting between retries.
 
-## Identification header
+## Identification
 
-Every request sends an `X-Webshare-Source` header identifying the caller for
-API-side tracking. The default is `WebshareSDK/<version> (Go; <runtime>)` —
-it names only the SDK and the Go runtime, no user data. Products built on
-the SDK can replace it:
+Every request sends a `User-Agent` that leads with a product token
+identifying the caller for API-side tracking, followed by the library:
+`WebshareSDK/<version> (Go; <runtime>) webshare-go/<version>`. It names only
+the SDK and the Go runtime, no user data. Products built on the SDK can
+replace the product token:
 
 ```go
 client, err := webshare.NewClient(webshare.WithSource("MyProduct/1.0.0"))

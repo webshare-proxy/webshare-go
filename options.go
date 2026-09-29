@@ -147,8 +147,8 @@ func WithFederatedUser(id int64) RequestOption {
 	}
 }
 
-// WithSource replaces the X-Webshare-Source header value that identifies the
-// caller for API-side tracking. The default is
+// WithSource replaces the product token that leads the User-Agent and
+// identifies the caller for API-side tracking. The default is
 // "WebshareSDK/<version> (Go; <runtime version>)"; products built on the SDK
 // (such as a CLI) can send their own product string instead.
 func WithSource(source string) RequestOption {
